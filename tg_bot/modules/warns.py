@@ -19,6 +19,7 @@ from tg_bot.modules.helper_funcs.misc import split_message
 from tg_bot.modules.helper_funcs.string_handling import split_quotes
 from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.sql import warns_sql as sql
+from tg_bot.modules.sql import users_sql as sql_user
 
 WARN_HANDLER_GROUP = 9
 CURRENT_WARNING_FILTER_STRING = "<b>Current warning filters in this chat:</b>\n"
@@ -220,6 +221,7 @@ def warns(bot: Bot, update: Update, args: List[str]):
     chat = update.effective_chat  # type: Optional[Chat]
     user_id = extract_user(message, args) or update.effective_user.id
     result = sql.get_warns(user_id, chat.id)
+    num = 1
 
     if result and result[0] != 0:
         num_warns, reasons = result
@@ -228,7 +230,8 @@ def warns(bot: Bot, update: Update, args: List[str]):
         if reasons:
             text = "This user has {}/{} warnings, for the following reasons:".format(num_warns, limit)
             for reason in reasons:
-                text += "\n - {}".format(reason)
+                text += "\n {}. {}".format(num, reason)
+                num += 1
 
             msgs = split_message(text)
             for msg in msgs:
