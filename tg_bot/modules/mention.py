@@ -18,7 +18,6 @@ from tg_bot import dispatcher, LOGGER
 PING_STRING = "<b>{} pinged users for {}:</b>\n"
 
 @run_async
-@user_admin
 def ping_list(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
     msg_user = update.effective_user # Not called user as it will give issues later on.
