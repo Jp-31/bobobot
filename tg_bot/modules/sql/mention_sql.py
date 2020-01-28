@@ -108,7 +108,7 @@ def last_execution(chat_id, date_time, time=10):
             SESSION.add(last_execution)
             SESSION.commit()
             SESSION.close()
-            return False
+            return True
 
         last_exec = [x.to_dict() for x in SESSION.query(LastExecution).filter(LastExecution.chat_id == str(chat_id))]
         for i in last_exec:

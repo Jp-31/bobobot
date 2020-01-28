@@ -1,7 +1,7 @@
-import asyncio
 import datetime
 import html
 import telegram
+import time
 import tg_bot.modules.sql.mention_sql as sql
 
 from typing import Optional, List
@@ -22,12 +22,11 @@ def ping_list(bot: Bot, update: Update):
     chat = update.effective_chat  # type: Optional[Chat]
     msg_user = update.effective_user # Not called user as it will give issues later on.
 
-    print("date: " + str(datetime.datetime.utcnow()))
     last_execution = sql.last_execution(chat.id, datetime.datetime.utcnow())
 
     if last_execution != False:
         all_handlers = sql.get_ping_list(msg_user.id, chat.id)
-        asyncio.sleep(1) # Needed to read the all_handlers length otherwise it wasn't finished fetching the data yet.
+        time.sleep(1) # Needed to read the all_handlers length otherwise it wasn't finished fetching the data yet.
         chat_name = chat.title or chat.first or chat.username
         if not all_handlers:
             update.effective_message.reply_text("There are no subscribed members here!")
