@@ -94,12 +94,12 @@ def pingme(bot: Bot, update: Update):
     except:
         user_name = user.first_name
 
-    if subscribe_user:
+    if subscribe_user == True:
         subs = "{} subscribed to Pinger!".format(user_name)
         keyboard = []
         message.reply_text(subs, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     else:
-        subs = "Failed to subscribe {} to Pinger!".format(user_name)
+        subs = "You are already subscribed to Pinger."
         keyboard = []
         message.reply_text(subs, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
@@ -117,12 +117,12 @@ def unpingme(bot: Bot, update: Update):
     except:
         user_name = user.first_name
 
-    if unsubscribe_user:
+    if unsubscribe_user == True:
         subs = "{} unsubscribed from Pinger.".format(user_name)
         keyboard = []
         message.reply_text(subs, reply_markup=keyboard, parse_mode=ParseMode.HTML)
     else:
-        subs = "Failed to unsubscribe {} from Pinger!".format(user_name)
+        subs = "You are not subscribed to Pinger."
         keyboard = []
         message.reply_text(subs, reply_markup=keyboard, parse_mode=ParseMode.HTML)
 
