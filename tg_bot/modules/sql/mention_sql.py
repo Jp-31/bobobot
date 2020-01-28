@@ -79,25 +79,26 @@ def add_mention(user_id, chat_id):
         mention_user = SESSION.query(Mention).get((user_id, str(chat_id)))
         if not mention_user:
             mention_user = Mention(user_id, str(chat_id))
+            SESSION.add(mention_user)
+            SESSION.commit()
+            SESSION.close()
+            return True
 
-        SESSION.add(mention_user)
-        SESSION.commit()
         SESSION.close()
-
-        return user_id
+        return False
 
 
 def remove_mention(user_id, chat_id):
     with MENTION_INSERTION_LOCK:
         mention_user = SESSION.query(Mention).get((user_id, str(chat_id)))
-        print(mention_user)
         if mention_user:
             SESSION.delete(mention_user)
+            SESSION.commit()
+            SESSION.close()
+            return True
 
-        SESSION.commit()
         SESSION.close()
-
-        return user_id
+        return False
 
 
 def reset_all_mentions(user_id, chat_id):
