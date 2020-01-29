@@ -21,9 +21,6 @@ class Mention(BASE):
     def __repr__(self):
         return "<User {} subscribed to Pinger in {}.>".format(self.user_id, self.chat_id)
 
-    def to_dict(self):
-        return { "user": self.user_id,
-                "chat": self.chat_id }
 
 class LastExecution(BASE):
     __tablename__ = "mention_time"
@@ -38,18 +35,22 @@ class LastExecution(BASE):
     def __repr__(self):
         return "Checked last command execution"
 
-    def to_dict(self):
-        return { "chat": self.chat_id,
-                "date": self.date_time }
 
 Mention.__table__.create(checkfirst=True)
 LastExecution.__table__.create(checkfirst=True)
 
 MENTION_INSERTION_LOCK = threading.RLock()
 
+
 def add_mention(user_id, chat_id):
     with MENTION_INSERTION_LOCK:
         mention_user = SESSION.query(Mention).get((user_id, str(chat_id)))
+        subscribed_users = SESSION.query(Mention).filter(
+            Mention.chat_id == str(chat_id)).count()
+
+        if not subscribed_users < 200:
+            return "max"
+
         if not mention_user:
             mention_user = Mention(user_id, str(chat_id))
             SESSION.add(mention_user)
@@ -76,10 +77,12 @@ def remove_mention(user_id, chat_id):
 
 def reset_all_mentions(user_id, chat_id):
     try:
-        reset_mentions = SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).all()
+        reset_mentions = SESSION.query(Mention).filter(
+            Mention.chat_id == str(chat_id)).all()
         print(str(reset_mentions))
         if reset_mentions:
-            SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).delete()
+            SESSION.query(Mention).filter(
+                Mention.chat_id == str(chat_id)).delete()
             SESSION.commit()
             SESSION.close()
             return True
@@ -94,11 +97,12 @@ def reset_all_mentions(user_id, chat_id):
 
 def get_ping_list(user_id, chat_id):
     try:
-        return [x.to_dict() for x in SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).limit(200).all()]
+        return SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).limit(200).all()
     except:
         SESSION.close()
     finally:
         SESSION.close()
+
 
 def last_execution(chat_id, date_time, time=10):
     with MENTION_INSERTION_LOCK:
@@ -110,12 +114,14 @@ def last_execution(chat_id, date_time, time=10):
             SESSION.close()
             return True
 
-        last_exec = [x.to_dict() for x in SESSION.query(LastExecution).filter(LastExecution.chat_id == str(chat_id))]
+        last_exec = SESSION.query(LastExecution).filter(
+            LastExecution.chat_id == str(chat_id))
         for i in last_exec:
-            duration = datetime.datetime.utcnow() - i["date"]
+            duration = datetime.datetime.utcnow() - i.date_time
             duration_in_s = duration.total_seconds()
             if divmod(duration_in_s, 60)[0] >= time:
-                last_execution = LastExecution(str(chat_id), datetime.datetime.utcnow())
+                last_execution = LastExecution(
+                    str(chat_id), datetime.datetime.utcnow())
                 SESSION.merge(last_execution)
                 SESSION.commit()
                 SESSION.close()
