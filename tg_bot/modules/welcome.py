@@ -120,16 +120,8 @@ def new_member(update: Update, context: CallbackContext):
                 continue
             
             if gban_checks:
-                join_gban = "User {} is currently globally banned. Therefore, is recommended with removal from {} " \
-                "immediately.".format(mention_html(user.id, user.first_name or "Deleted Account"), 
-                                                            chat.title)
-                if gban_checks.reason:
-                    join_gban += "\n<b>Reason</b>: {}".format(gban_checks.reason)
-                    
-                    
-                    msg.reply_text(join_gban, parse_mode=ParseMode.HTML)
-                    update.effective_message.delete()
-                    continue
+                msg.delete()
+                continue
                 
             # Make bot greet admins
             elif new_mem.id == context.bot.id:
