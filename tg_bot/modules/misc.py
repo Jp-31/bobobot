@@ -523,7 +523,6 @@ def info(update: Update, context: CallbackContext):
         user = context.bot.get_chat(user_id)
 
     elif not msg.reply_to_message and len(args) <= 1:
-        print("Testing")
         user = msg.from_user
 
     elif len(args) >= 2:

@@ -1,4 +1,4 @@
-import html, time
+import html, time, spamwatch
 from io import BytesIO
 from typing import Optional, List
 
@@ -9,13 +9,14 @@ from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.global_bans_sql as sql
 from tg_bot import dispatcher, OWNER_ID, SUPER_ADMINS, SUDO_USERS, EVIDENCES_LOG, MESSAGE_DUMP, SUPPORT_USERS, \
-     STRICT_GBAN, GBAN_LOG, CMD_PREFIX
+     STRICT_GBAN, GBAN_LOG, CMD_PREFIX, SPAMWATCH_TOKEN
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.sql.users_sql import get_all_chats, get_users_by_chat, get_name_by_userid
 
 GBAN_ENFORCE_GROUP = 6
+client = spamwatch.Client(SPAMWATCH_TOKEN) # initialize spamwatch client with the token from the config file
 
 GBAN_ERRORS = {
     "User is an administrator of the chat",
@@ -98,6 +99,7 @@ def gban(update: Update, context: CallbackContext):
             same_reason = "User {} has already been gbanned, with the " \
                           "exact same reason.".format(mention_html(user_chat.id, user_chat.first_name 
                                                                    or "Deleted Account"))
+
             message.reply_text(same_reason, parse_mode=ParseMode.HTML)
             return
             
@@ -137,7 +139,7 @@ def gban(update: Update, context: CallbackContext):
                       "I've gone and updated it with your new reason!".format(mention_html(user_chat.id, 
                                                                               user_chat.first_name or "Deleted Account"), 
                                                                               old_reason)
-            
+    
             message.reply_text(old_msg, parse_mode=ParseMode.HTML)
         
         else:
@@ -178,7 +180,7 @@ def gban(update: Update, context: CallbackContext):
         return
 
     starting = "Initiating global ban for {}...".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-    
+
     message.reply_text(starting, parse_mode=ParseMode.HTML)
     
     banner = update.effective_user  # type: Optional[User]
@@ -280,7 +282,7 @@ def fban(update: Update, context: CallbackContext):
             msg = "User {} is already blacklisted; I'd change the reason, " \
                   "but you haven't given me one...".format(mention_html(user_chat.id, user_chat.first_name 
                                                                         or "Deleted Account"))
-            
+
             message.reply_text(msg, parse_mode=ParseMode.HTML)
             return
 
@@ -338,7 +340,7 @@ def fban(update: Update, context: CallbackContext):
                       "I've gone and updated it with your new reason!".format(mention_html(user_chat.id, 
                                                                               user_chat.first_name or "Deleted Account"), 
                                                                               old_reason)
-            
+
             message.reply_text(old_msg, parse_mode=ParseMode.HTML)
         
         else:
@@ -379,13 +381,13 @@ def fban(update: Update, context: CallbackContext):
             context.bot.send_message(MESSAGE_DUMP, text=send_gban, parse_mode=ParseMode.HTML)
             msg = "User {} is already blacklisted, but had no reason set; " \
                   "I've gone and updated it!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-            
+
             message.reply_text(msg, parse_mode=ParseMode.HTML)
 
         return
 
     starting = "Blacklisting {}...".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-    
+
     message.reply_text(starting, parse_mode=ParseMode.HTML)
     
     banner = update.effective_user  # type: Optional[User]
@@ -455,6 +457,7 @@ def fban(update: Update, context: CallbackContext):
         context.bot.send_message(chat_id=GBAN_LOG, text=blacklist_t, parse_mode=ParseMode.HTML)
     
     context.bot.send_message(MESSAGE_DUMP, text=blacklist_t, parse_mode=ParseMode.HTML)
+
     message.reply_text("User {} has been blacklisted!".format(mention_html(user_chat.id, user_chat.first_name 
                                                             or "Deleted Account")), parse_mode=ParseMode.HTML)
 
@@ -636,10 +639,8 @@ def unfban(update: Update, context: CallbackContext):
     
     context.bot.send_message(MESSAGE_DUMP, text=blacklist_t, parse_mode=ParseMode.HTML)
 
-    bl = []
     message.reply_text("User {} has been unblacklisted.".format(mention_html(user_chat.id, user_chat.first_name 
-                                                               or "Deleted Account")), reply_markup=bl, 
-                                                                                       parse_mode=ParseMode.HTML)
+                                                               or "Deleted Account")), parse_mode=ParseMode.HTML)
 
 @run_async
 def gbanlist(update: Update, context: CallbackContext):
@@ -660,33 +661,57 @@ def gbanlist(update: Update, context: CallbackContext):
         update.effective_message.reply_document(document=output, filename="gbanlist.txt",
                                                 caption="Here is the list of currently gbanned users.")
 
-
-def check_and_ban(update: Update, context: CallbackContext, user_id, should_message=True):
+def notification1(update: Update, context: CallbackContext, user_id, should_message=True):
     chat = update.effective_chat  # type: Optional[Chat]
-    msg_user = update.effective_user
-    user = context.bot.get_chat(user_id)
-    msg = update.effective_message
+    msg = update.effective_message  # type: Optional[Message]
+    user = bot.get_chat(user_id)
     user_r = sql.get_gbanned_user(user_id)
     
+    
     chatban_text = "User {} is currently globally banned and is removed from {} with an " \
-                   "immediate effect.".format(user.first_name or "Deleted Account", chat.title)
+                   "immediate effect.".format(mention_html(user.id, user.first_name or "Deleted Account"), chat.title)
+    
+    if sql.is_user_gbanned(user_id):
+        if user_r.reason:
+            chatban_text += "\n<b>Reason</b>: {}".format(user_r.reason)
+                
+        if should_message:
+            msg.reply_text(chatban_text, parse_mode=ParseMode.HTML)
+
+def notification_welc(update: Update, context: CallbackContext, user_id, should_message=True):
+    chat = update.effective_chat  # type: Optional[Chat]
+    msg = update.effective_message  # type: Optional[Message]
+    user = update.effective_user  # type: Optional[User]
+    
+    if msg.new_chat_members:
+                new_members = update.effective_message.new_chat_members
+                for mem in new_members:
+                    user_r = sql.get_gbanned_user(mem.id)
+                    
+                    welc_gban = "User {} is currently globally banned and is removed from {} with an " \
+                                "immediate effect.".format(mention_html(mem.id, mem.first_name or "Deleted Account"), 
+                                                                        chat.title)
+                    if sql.is_user_gbanned(mem.id):
+                        if user_r.reason:
+                            welc_gban += "\n<b>Reason</b>: {}".format(user_r.reason)
+                                
+                        if should_message:
+                            msg.reply_text(welc_gban, parse_mode=ParseMode.HTML)
+
+def check_and_ban(update, context, user_id):
+    chat = update.effective_chat  # type: Optional[Chat]
+    msg = update.effective_message
        
     if sql.is_user_gbanned(user_id):
         chat.kick_member(user_id)
-        if user_r.reason:
-            chatban_text += "\n<b>Reason</b>: {}".format(user_r.reason)
-            
-        if should_message and user == msg_user:
-            
-            msg.reply_text(chatban_text, parse_mode=ParseMode.HTML)
 
 def welcome_gban(update, context, user_id):
     chat = update.effective_chat  # type: Optional[Chat]
-    user = update.effective_user  # type: Optional[User]
     msg = update.effective_message
            
     if sql.is_user_gbanned(user_id):
         chat.kick_member(user_id)
+        msg.delete()
 
 @run_async
 def enforce_gban(update: Update, context: CallbackContext):
@@ -699,18 +724,31 @@ def enforce_gban(update: Update, context: CallbackContext):
 
         if user and not is_user_admin(chat, user.id):
             check_and_ban(update, context, user.id)
+        
+        if not gban_alert:
+            if msg.new_chat_members:
+                new_members = update.effective_message.new_chat_members
+                for mem in new_members:
+                    notification_welc(update, context, mem.id)
+                    welcome_gban(update, context, mem.id)
 
-        if gban_alert or gban_alert == None:
+            
+            if msg.reply_to_message:
+                user = msg.reply_to_message.from_user  # type: Optional[User]
+                if user and not is_user_admin(chat, user.id):
+                    notification1(update, context, user.id, should_message=False)
+                    check_and_ban(update, context, user.id)
+        else:
             if msg.new_chat_members:
                 new_members = update.effective_message.new_chat_members
                 for mem in new_members:
                     welcome_gban(update, context, mem.id)
 
-        if not gban_alert and gban_alert != None:
+            
             if msg.reply_to_message:
                 user = msg.reply_to_message.from_user  # type: Optional[User]
                 if user and not is_user_admin(chat, user.id):
-                    check_and_ban(update, context, user.id, should_message=True)
+                    check_and_ban(update, context, user.id)
 
 @run_async
 @user_admin
@@ -718,17 +756,18 @@ def gbanalert(update: Update, context: CallbackContext):
     chat = update.effective_chat
     args = update.effective_message.text.split(" ")
     args_option = ""
+    bot = context.bot
     
     if len(args) > 1:
         args_option = args[1].lower()
         
     if len(args) > 1:
         if args_option != "" and args_option in ["on", "yes"]:
-            sql.enable_alert(chat.id)
+            sql.disable_alert(chat.id)
             update.effective_message.reply_text("Global ban notification is <code>enabled</code> for {}.".format(chat.title),
                                                  parse_mode=ParseMode.HTML)
         elif args_option != "" and args_option in ["off", "no"]:
-            sql.disable_alert(chat.id)
+            sql.enable_alert(chat.id)
             update.effective_message.reply_text("Global ban notification is <code>disabled</code> for {}.".format(chat.title),
                                                  parse_mode=ParseMode.HTML)
         else:
@@ -736,17 +775,17 @@ def gbanalert(update: Update, context: CallbackContext):
     else:
         alert = sql.does_chat_alert(chat.id)
         if not alert:
-            aler_txt = "Global ban notifications are currently <code>disabled</code>; whenever a user " \
-                       "that is banned in {} joins or speaks, they will be quietly removed.".format(chat.title)
+            aler_txt = "Global ban notifications are currently <code>enabled</code>; whenever a user " \
+                       "that is banned in {} joins or speaks in {}, they will be removed, " \
+                       "along with a message " \
+                       "explaining why.".format(bot.first_name, chat.title)
             update.effective_message.reply_text(aler_txt, parse_mode=ParseMode.HTML)
         else:
-            aler_txt = "Global ban notifications are currently <code>enabled</code>; whenever a user " \
-                       "that is banned in {} joins or speaks, they will be removed, " \
-                       "along with a message " \
-                       "explaining why.".format(chat.title)
+            aler_txt = "Global ban notifications are currently <code>disable</code>; whenever a user " \
+                       "that is banned in {} joins or speaks in {}, they will be quietly removed.".format(bot.first_name, 
+                                                                                                          chat.title)
             update.effective_message.reply_text(aler_txt, parse_mode=ParseMode.HTML)
         
-
 
 @run_async
 def msg_evidence(update: Update, context: CallbackContext):
