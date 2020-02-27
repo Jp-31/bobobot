@@ -664,7 +664,7 @@ def gbanlist(update: Update, context: CallbackContext):
 def notification1(update: Update, context: CallbackContext, user_id, should_message=True):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message  # type: Optional[Message]
-    user = bot.get_chat(user_id)
+    user = context.bot.get_chat(user_id)
     user_r = sql.get_gbanned_user(user_id)
     
     
