@@ -5,7 +5,7 @@ from telegram import Message, Update, Bot, User, Chat, ParseMode, InlineKeyboard
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, CallbackContext
 
-from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER
+from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER, CMD_PREFIX
 import tg_bot.modules.sql.global_bans_sql as sql
 from telegram.utils.helpers import mention_html
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
@@ -92,15 +92,20 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
 def spamwatch_stat(update: Update, context: CallbackContext):
     chat = update.effective_chat
     msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
+    args_option = ""
     
-    if len(args) > 0:
-        if args[0].lower() in ["on", "yes"]:
+    if len(args) > 1:
+        args_option = args[1].lower()
+    
+    if len(args) >= 2:
+        if args_option != "" and args_option in ["on", "yes"]:
             sql.enable_spamw(update.effective_chat.id)
             spamstat_1 = "I've enabled SpamWatch ban for {}. Therefore, " \
                        "You're protected from spammers, spambots, trolls and unsavoury characters.".format(chat.title)
             msg.reply_text(spamstat_1)
         
-        elif args[0].lower() in ["off", "no"]:
+        elif args_option != "" and args_option in ["off", "no"]:
             sql.disable_spamw(update.effective_chat.id)
             spamstat_2 = "I've disabled SpamWatch bans for {}. SpamWatch ban wont affect your users " \
                           "anymore. You'll be less protected from any trolls and spammers " \
@@ -129,7 +134,7 @@ disengage from protecting the chatroom.
 __mod_name__ = "SpamWatch"
     
 SPAM_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_spamwatch_ban)
-SPAM_STATUS = CommandHandler("spamwatch", spamwatch_stat, filters=Filters.group)
+SPAM_STATUS = CommandHandler(CMD_PREFIX, "spamwatch", spamwatch_stat, filters=Filters.group)
 
 dispatcher.add_handler(SPAM_ENFORCER, SPAM_ENFORCE_GROUP)
 dispatcher.add_handler(SPAM_STATUS)
