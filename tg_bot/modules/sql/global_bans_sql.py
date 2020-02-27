@@ -29,16 +29,19 @@ class GbanSettings(BASE):
     __tablename__ = "gban_settings"
     chat_id = Column(String(14), primary_key=True)
     setting = Column(Boolean, default=True, nullable=False)
-    gban_alert = Column(Boolean, default=True)
+    gban_alert = Column(Boolean, default=True, nullable=False)
+    spamwatch = Column(Boolean, default=True, nullable=False)
 
-    def __init__(self, chat_id, enabled, gban_alert=True):
+    def __init__(self, chat_id, enabled, gban_alert=True, spamwatch=True):
         self.chat_id = str(chat_id)
         self.setting = enabled
         self.gban_alert = gban_alert
+        self.spamwatch = spamwatch
 
     def __repr__(self):
         return "<Gban setting {} ({})>".format(self.chat_id, self.setting)
         return "<Gban alert {} ({})>".format(self.chat_id, self.gban_alert)
+        return "<SpamWatch setting {} ({})>".format(self.chat_id, self.spamwatch)
 
 
 
@@ -50,6 +53,7 @@ GBAN_SETTING_LOCK = threading.RLock()
 GBANNED_LIST = set()
 GBANSTAT_LIST = set()
 GBANALERT_LIST = set()
+SPAMWATCH_LIST = set()
 
 
 def gban_user(user_id, name, reason=None):
@@ -100,6 +104,15 @@ def get_gbanned_user(user_id):
     finally:
         SESSION.close()
 
+def get_gban_reason(user_id):
+    with GBANNED_USERS_LOCK:
+        reason =  SESSION.query(GloballyBannedUsers).get(user_id)
+        if not reason:
+            SESSION.close()
+            return None
+        SESSION.close()
+        return reason.reason
+
 
 def get_gban_list():
     try:
@@ -133,8 +146,8 @@ def disable_alert(chat_id):
         
 def get_gban_alert(chat_id):
     with GBAN_SETTING_LOCK:
-        setting =  SESSION.query(GbanSettings).get(str(chat_id))
-        if not setting:
+        gban_alert =  SESSION.query(GbanSettings).get(str(chat_id))
+        if not gban_alert:
             SESSION.close()
             return None
         SESSION.close()
@@ -165,12 +178,38 @@ def disable_gbans(chat_id):
         SESSION.commit()
         GBANSTAT_LIST.add(str(chat_id))
 
+def enable_spamw(chat_id):
+    with GBAN_SETTING_LOCK:
+        chat = SESSION.query(GbanSettings).get(str(chat_id))
+        if not chat:
+            chat = GbanSettings(chat_id, True)
+
+        chat.spamwatch = True
+        SESSION.add(chat)
+        SESSION.commit()
+        if str(chat_id) in SPAMWATCH_LIST:
+            SPAMWATCH_LIST.remove(str(chat_id))
+
+
+def disable_spamw(chat_id):
+    with GBAN_SETTING_LOCK:
+        chat = SESSION.query(GbanSettings).get(str(chat_id))
+        if not chat:
+            chat = GbanSettings(chat_id, False)
+
+        chat.spamwatch = False
+        SESSION.add(chat)
+        SESSION.commit()
+        SPAMWATCH_LIST.add(str(chat_id))
+
 def does_chat_gban(chat_id):
     return str(chat_id) not in GBANSTAT_LIST
 
 def does_chat_alert(chat_id):
     return str(chat_id) not in GBANALERT_LIST
 
+def does_chat_spamwatch(chat_id):
+    return str(chat_id) not in SPAMWATCH_LIST
 
 def num_gbanned_users():
     return len(GBANNED_LIST)
