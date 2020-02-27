@@ -30,8 +30,4 @@ class CustomCommandHandler(tg.PrefixHandler):
             context.args = check_result[0]
             if isinstance(check_result[1], dict):
                 context.update(check_result[1])
-                
 
-class CustomRegexHandler(tg.RegexHandler):
-    def __init__(self, pattern, callback, friendly="", **kwargs):
-        super().__init__(pattern, callback, **kwargs)

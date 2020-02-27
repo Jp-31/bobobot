@@ -5,7 +5,7 @@ from typing import Optional, List
 from telegram import MAX_MESSAGE_LENGTH, ParseMode, InlineKeyboardMarkup
 from telegram import Message, Update, Bot
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, RegexHandler, CallbackContext
+from telegram.ext import CommandHandler, RegexHandler, CallbackContext, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown, mention_markdown, mention_html
 
@@ -318,7 +318,7 @@ This will retrieve the note and send it without formatting it; getting you the r
 __mod_name__ = "Notes"
 
 GET_HANDLER = CommandHandler(CMD_PREFIX, "get", cmd_get)
-HASH_GET_HANDLER = RegexHandler(r"^#[^\s]+", hash_get)
+HASH_GET_HANDLER = MessageHandler(Filters.regex(r"^#[^\s]+"), hash_get)
 
 SAVE_HANDLER = CommandHandler(CMD_PREFIX, "save", save)
 DELETE_HANDLER = CommandHandler(CMD_PREFIX, "clear", clear)

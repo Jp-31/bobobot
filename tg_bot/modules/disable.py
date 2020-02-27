@@ -64,9 +64,9 @@ if is_module_loaded(FILENAME):
         
 
 
-    class DisableAbleRegexHandler(RegexHandler):
+    class DisableAbleRegexHandler(MessageHandler):
         def __init__(self, pattern, callback, friendly="", **kwargs):
-            super().__init__(pattern, callback, **kwargs)
+            super().__init__(Filters.regex(pattern), callback, **kwargs)
             DISABLE_OTHER.append(friendly or pattern)
             self.friendly = friendly or pattern
 
@@ -80,7 +80,6 @@ if is_module_loaded(FILENAME):
     def disable(update: Update, context: CallbackContext):
         chat = update.effective_chat  # type: Optional[Chat]
         if len(context.args) >= 1:
-            print("Disable: " + context.args[0])
             disable_cmd = context.args[0]
 
             if disable_cmd in set(DISABLE_CMDS + DISABLE_OTHER):
