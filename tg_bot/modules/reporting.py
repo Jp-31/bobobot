@@ -4,7 +4,7 @@ from typing import Optional, List
 from telegram import Message, Chat, Update, Bot, User, ParseMode
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.error import BadRequest, Unauthorized
-from telegram.ext import CommandHandler, RegexHandler, run_async, Filters, CallbackContext
+from telegram.ext import CommandHandler, RegexHandler, run_async, Filters, CallbackContext, MessageHandler
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
@@ -231,7 +231,7 @@ admins don't need to report, or be reported!
 REPORT_HANDLER = CommandHandler(CMD_PREFIX, "report", report, filters=Filters.group)
 SOLVE_HANDLER = CommandHandler(CMD_PREFIX, ["solve", "solved"], report_solve, filters=Filters.group)
 SETTING_HANDLER = CommandHandler(CMD_PREFIX, "reports", report_setting)
-ADMIN_REPORT_HANDLER = RegexHandler("(?i)@admin(s)?", report)
+ADMIN_REPORT_HANDLER = MessageHandler(Filters.regex("(?i)@admin(s)?"), report)
 
 dispatcher.add_handler(REPORT_HANDLER, REPORT_GROUP)
 dispatcher.add_handler(SOLVE_HANDLER, REPORT_GROUP)

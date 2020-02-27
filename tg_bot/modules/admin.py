@@ -5,7 +5,7 @@ import tldextract
 from telegram import Message, Chat, Update, Bot, User
 from telegram import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, Filters, RegexHandler, CallbackContext
+from telegram.ext import CommandHandler, Filters, RegexHandler, CallbackContext, MessageHandler
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown, mention_html, mention_markdown
 
@@ -475,7 +475,7 @@ LINK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "link", link_public)
 SET_LINK_HANDLER = CommandHandler(CMD_PREFIX, "setlink", set_link, filters=Filters.group)
 LINKMODE_HANDLER = CommandHandler(CMD_PREFIX, "linkmode", linkmode, filters=Filters.group)
 RESET_LINK_HANDLER = CommandHandler(CMD_PREFIX, "clearlink", clear_link, filters=Filters.group)
-HASH_LINK_HANDLER = RegexHandler("#link", link_public)
+HASH_LINK_HANDLER = MessageHandler(Filters.regex("#link"), link_public)
 INVITE_HANDLER = CommandHandler(CMD_PREFIX, "invitelink", invite, filters=Filters.group)
 PERMAPIN_HANDLER = CommandHandler(CMD_PREFIX, ["permapin", "perma"], permapin, filters=Filters.group)
 PROMOTE_HANDLER = CommandHandler(CMD_PREFIX, "promote", promote, filters=Filters.group)
