@@ -151,7 +151,7 @@ def get_gban_alert(chat_id):
             SESSION.close()
             return None
         SESSION.close()
-        return setting.gban_alert
+        return gban_alert
         
 
 def enable_gbans(chat_id):
