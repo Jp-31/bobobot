@@ -71,7 +71,7 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
 
     try:
         chat.kick_member(user_id)
-        message.reply_text(reply, parse_mode=ParseMode.HTML)
+        message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
         return
 
     except BadRequest as excp:
@@ -87,40 +87,32 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
 
     return ""
 
-# @run_async
-# @user_admin
-# def spamwatch_stat(update: Update, context: CallbackContext):
-#     chat = update.effective_chat
-#     if len(args) > 0:
-#         if args[0].lower() in ["on", "yes"]:
-#             sql.enable_gbans(update.effective_chat.id)
-#             spamstat = "I've enabled SpamWatch ban for {}. Therefore, "
-#                        "You're protected from active spammers, trolls, unsavoury characters."
-#             update.effective_message.reply_text(spamstat.format(chat.title))
-#
-#         elif args[0].lower() in ["off", "no"]:
-#             sql.disable_gbans(update.effective_chat.id)
-#             spamstat = "I've disabled SpamWatch bans for {}. SpamWatch ban wont affect your users "
-#                        "anymore. You'll be less protected from any trolls and spammers "
-#                        "though!"
-#             update.effective_message.reply_text(spamstat.format(chat.title))
-#     else:
-#         update.effective_message.reply_text("Give me some arguments to choose a setting! on/off, yes/no!\n\n"
-#                                             "Your current setting is: {}\n"
-#                                             "When True, any SpamWatch bans that happen will also happen in your group. "
-#                                             "When False, they won't, leaving you at the possible mercy of "
-#                                             "spammers.".format(sql.does_chat_gban(update.effective_chat.id)))
+@run_async
+@user_admin
+def spamwatch_stat(update: Update, context: CallbackContext):
+    chat = update.effective_chat
+    msg = update.effective_message  # type: Optional[Message]
+    
+    if len(args) > 0:
+        if args[0].lower() in ["on", "yes"]:
+            sql.enable_spamw(update.effective_chat.id)
+            spamstat_1 = "I've enabled SpamWatch ban for {}. Therefore, " \
+                       "You're protected from spammers, spambots, trolls and unsavoury characters.".format(chat.title)
+            msg.reply_text(spamstat_1)
+        
+        elif args[0].lower() in ["off", "no"]:
+            sql.disable_spamw(update.effective_chat.id)
+            spamstat_2 = "I've disabled SpamWatch bans for {}. SpamWatch ban wont affect your users " \
+                          "anymore. You'll be less protected from any trolls and spammers " \
+                          "though!".format(chat.title)
+            update.effective_message.reply_text(spamstat_2)
+    else:
+        msg.reply_text("Give me some arguments to choose a setting! on/off, yes/no!\n\n"
+                       "Your current setting is: {}\n"
+                       "When True, any SpamWatch bans that happen will also happen in your group. "
+                       "When False, they won't, leaving you at the possible mercy of "
+                       "spammers.".format(sql.does_chat_spamwatch(update.effective_chat.id)))
 
-def __user_info__(user_id):
-    is_banned = client.get_ban(user_id)
-
-    user = client.get_ban(user_id)
-    text =""
-    if is_banned:
-        text = "This user is currently banned by Spamwatch."
-        if user.reason:
-            text += "\nReason: {}".format(html.escape(user.reason))
-    return text
     
 __help__ = """
 SpamWatch maintains a large constantly updated ban-list of spambots, trolls, unsavoury characters. {} will constantly \
@@ -137,4 +129,7 @@ disengage from protecting the chatroom.
 __mod_name__ = "SpamWatch"
     
 SPAM_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_spamwatch_ban)
+SPAM_STATUS = CommandHandler("spamwatch", spamwatch_stat, filters=Filters.group)
+
 dispatcher.add_handler(SPAM_ENFORCER, SPAM_ENFORCE_GROUP)
+dispatcher.add_handler(SPAM_STATUS)

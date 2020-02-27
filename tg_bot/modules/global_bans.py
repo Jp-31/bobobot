@@ -874,14 +874,30 @@ def __stats__():
 
 
 def __user_info__(user_id):
-    is_gbanned = sql.is_user_gbanned(user_id)
+    is_banned = client.get_ban(user_id)
+    gbanned = sql.is_user_gbanned(user_id)
 
-    user = sql.get_gbanned_user(user_id)
+    user_sw = client.get_ban(user_id)
+    user_gb = sql.get_gbanned_user(user_id)
     text =""
-    if is_gbanned:
+    
+    if is_banned:
+        text = "This user is currently banned by SpamWatch."
+        if user_sw.reason:
+            text += "\nReason: {}".format(html.escape(user_sw.reason))
+    
+    if gbanned:
         text = "This user is currently globally banned."
-        if user.reason:
-            text += "\nReason: {}".format(html.escape(user.reason))
+        if user_gb.reason:
+            text += "\nReason: {}".format(html.escape(user_gb.reason))
+            
+    if is_banned and gbanned:
+        text = "This user is currently globally and SpamWatch banned."
+        if user_gb.reason:
+            text += "\nGlobal Ban Reason: {}".format(html.escape(user_gb.reason))
+            
+        if user_sw.reason:
+            text += "\nSpamWatch Ban Reason: {}".format(html.escape(user_sw.reason))
     return text
 
 
@@ -901,11 +917,11 @@ bans spammers, trolls and unsavoury characters.
 Global bans will actively engage in banning spammers, you'd have to worry-less on spammers joining in and {} will \
 remove them from your group quickly as possible.
 
-You can disable the Global bans by `/gbanstat off` or enable `/gbanstat on`
+You can disable the Global bans by `/gbanstat off` or enable `/gbanstat on`.
 
 *Admin only:*
  - /gbanstat <on/off/yes/no>: Will disable the effect of global bans on your group, or return your current settings.
- - /gbanalert <on/off/yes/no>: Whether or not send global ban notification upon user join/speak in the chat.
+ - /gbanalert <on/off/yes/no>: Whether or not send global ban notification in the chat upon user join/speak in the chat.
 """.format(dispatcher.bot.first_name, dispatcher.bot.first_name)
 
 __mod_name__ = "Global Bans"
