@@ -2,18 +2,21 @@ from typing import Union, List, Optional
 
 from future.utils import string_types
 from telegram import ParseMode, Update, Bot, Chat, User
-from telegram.ext import CommandHandler, RegexHandler, Filters
-from telegram.utils.helpers import escape_markdown
+from telegram.ext import CommandHandler, RegexHandler, Filters, MessageHandler, PrefixHandler, CallbackContext
+from telegram.utils.helpers import escape_markdown, mention_html
+from telegram.error import BadRequest
 
-from tg_bot import dispatcher
+from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.modules.helper_funcs.handlers import CMD_STARTERS
 from tg_bot.modules.helper_funcs.misc import is_module_loaded
+from tg_bot.modules.log_channel import loggable
+import html
 
 FILENAME = __name__.rsplit(".", 1)[-1]
 
 # If module is due to be loaded, then setup all the magical handlers
 if is_module_loaded(FILENAME):
-    from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
+    from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin, can_delete
     from telegram.ext.dispatcher import run_async
 
     from tg_bot.modules.sql import disable_sql as sql
@@ -22,9 +25,9 @@ if is_module_loaded(FILENAME):
     DISABLE_OTHER = []
     ADMIN_CMDS = []
 
-    class DisableAbleCommandHandler(CommandHandler):
-        def __init__(self, command, callback, admin_ok=False, **kwargs):
-            super().__init__(command, callback, **kwargs)
+    class DisableAbleCommandHandler(PrefixHandler):
+        def __init__(self, prefix, command, callback, admin_ok=False, **kwargs):
+            super().__init__(prefix, command, callback, **kwargs)
             self.admin_ok = admin_ok
             if isinstance(command, string_types):
                 DISABLE_CMDS.append(command)
@@ -35,7 +38,8 @@ if is_module_loaded(FILENAME):
                 if admin_ok:
                     ADMIN_CMDS.extend(command)
 
-        def check_update(self, update):
+
+        def check_update(self, update: Update):
             chat = update.effective_chat  # type: Optional[Chat]
             user = update.effective_user  # type: Optional[User]
             if super().check_update(update):
@@ -43,7 +47,7 @@ if is_module_loaded(FILENAME):
                 command = update.effective_message.text_html.split(None, 1)[0][1:].split('@')[0]
 
                 # disabled, admincmd, user admin
-                if sql.is_command_disabled(chat.id, command):
+                if sql.is_command_disabled(chat.id, command.lower()):
                     return command in ADMIN_CMDS and is_user_admin(chat, user.id)
 
                 # not disabled
@@ -51,6 +55,13 @@ if is_module_loaded(FILENAME):
                     return True
 
             return False
+
+        def collect_additional_context(self, context, update, dispatcher, check_result):
+            if check_result != True and check_result != False and check_result is not None:
+                context.args = check_result[0]
+                if isinstance(check_result[1], dict):
+                    context.update(check_result[1])
+        
 
 
     class DisableAbleRegexHandler(RegexHandler):
@@ -66,12 +77,11 @@ if is_module_loaded(FILENAME):
 
     @run_async
     @user_admin
-    def disable(bot: Bot, update: Update, args: List[str]):
+    def disable(update: Update, context: CallbackContext):
         chat = update.effective_chat  # type: Optional[Chat]
-        if len(args) >= 1:
-            disable_cmd = args[0]
-            if disable_cmd.startswith(CMD_STARTERS):
-                disable_cmd = disable_cmd[1:]
+        if len(context.args) >= 1:
+            print("Disable: " + context.args[0])
+            disable_cmd = context.args[0]
 
             if disable_cmd in set(DISABLE_CMDS + DISABLE_OTHER):
                 sql.disable_command(chat.id, disable_cmd)
@@ -86,10 +96,10 @@ if is_module_loaded(FILENAME):
 
     @run_async
     @user_admin
-    def enable(bot: Bot, update: Update, args: List[str]):
+    def enable(update: Update, context: CallbackContext):
         chat = update.effective_chat  # type: Optional[Chat]
-        if len(args) >= 1:
-            enable_cmd = args[0]
+        if len(context.args) >= 1:
+            enable_cmd = context.args[0]
             if enable_cmd.startswith(CMD_STARTERS):
                 enable_cmd = enable_cmd[1:]
 
@@ -101,16 +111,71 @@ if is_module_loaded(FILENAME):
 
         else:
             update.effective_message.reply_text("What should I enable?")
+    
+#     @run_async
+#     def del_cmds(update: Update, context: CallbackContext):
+#         chat = update.effective_chat  # type: Optional[Chat]
+#         msg = update.effective_message
+#         is_disabled = sql.is_command_disabled(chat.id)
+#         disabled = sql.get_cmd_pref(chat.id)
+#     
+#         for cmd in is_disabled:
+#             if disabled:
+#                 try:
+#                   msg.delete()
+#                 except BadRequest as excp:
+#                     if excp.message == "Message to delete not found":
+#                         pass
+#                     else:
+#                         LOGGER.exception("Error while deleting disabled messages.")
+#                 break
+       
+    
+    @run_async
+    @user_admin
+    @loggable
+    def disable_del(update: Update, context: CallbackContext) -> str:
+        chat = update.effective_chat  # type: Optional[Chat]
+        user = update.effective_user  # type: Optional[User]
+
+        if not context.args:
+            del_pref = sql.get_cmd_pref(chat.id)
+            if del_pref:
+                update.effective_message.reply_text("All disabled command messages will be currently deleted.")
+            else:
+                update.effective_message.reply_text("All enabled command messages will not be deleted.")
+            return ""
+        
+        if context.args[0].lower() in ("on", "yes"):
+            sql.set_disabledel(str(chat.id), True)
+            update.effective_message.reply_text("Disabled messages will now be deleted.")
+            return "<b>{}:</b>" \
+                   "\n#DISABLED" \
+                   "\n<b>• Admin:</b> {}" \
+                   "\nHas toggled disabled messages deletion to <code>ON</code>.".format(html.escape(chat.title),
+                                                                             mention_html(user.id, user.first_name))
+        elif context.args[0].lower() in ("off", "no"):
+            sql.set_disabledel(str(chat.id), False)
+            update.effective_message.reply_text("Disabled messages will no longer be deleted.")
+            return "<b>{}:</b>" \
+                   "\n#DISABLED" \
+                   "\n<b>• Admin:</b> {}" \
+                   "\nHas toggled disabled messages deletion to <code>OFF</code>.".format(html.escape(chat.title),
+                                                                              mention_html(user.id, user.first_name))
+        else:
+            # idek what you're writing, say yes or no
+            update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
+            return ""
 
 
     @run_async
     @user_admin
-    def list_cmds(bot: Bot, update: Update):
+    def list_cmds(update: Update, context: CallbackContext):
         if DISABLE_CMDS + DISABLE_OTHER:
             result = ""
             for cmd in set(DISABLE_CMDS + DISABLE_OTHER):
                 result += " - `{}`\n".format(escape_markdown(cmd))
-            update.effective_message.reply_text("The following commands are toggleable:\n{}".format(result),
+            update.effective_message.reply_text("The following commands can be disabled:\n{}".format(result),
                                                 parse_mode=ParseMode.MARKDOWN)
         else:
             update.effective_message.reply_text("No commands can be disabled.")
@@ -124,14 +189,15 @@ if is_module_loaded(FILENAME):
 
         result = ""
         for cmd in disabled:
-            result += " - `{}`\n".format(escape_markdown(cmd))
-        return "The following commands are currently restricted:\n{}".format(result)
+            result += " • `{}`\n".format(escape_markdown(cmd))
+        return "The following commands are disabled in this chat:\n{}".format(result)
 
 
     @run_async
-    def commands(bot: Bot, update: Update):
+    def commands(update: Update, context: CallbackContext):
         chat = update.effective_chat
-        update.effective_message.reply_text(build_curr_disabled(chat.id), parse_mode=ParseMode.MARKDOWN)
+        msg = update.effective_message  # type: Optional[Message]
+        msg.reply_text(build_curr_disabled(chat.id), parse_mode=ParseMode.MARKDOWN)
 
 
     def __stats__():
@@ -146,32 +212,37 @@ if is_module_loaded(FILENAME):
         return build_curr_disabled(chat_id)
 
 
-    __mod_name__ = "Command disabling"
+    __mod_name__ = "Disabling"
 
     __help__ = """
-Not everyone wants every feature that the bot offers. Some commands are best \
+Not everyone wants every feature that the {} offers. Some commands are best \
 left unused; to avoid spam and abuse.
 
 This allows you to disable some commonly used commands, so noone can use them. \
-It'll also allow you to autodelete them, stopping people from bluetexting.
+It'll also allow you to auto-delete them, stopping people from blue-texting.
 
- - /cmds: check the current status of disabled commands
+ - /disabled: check the current status of disabled commands
 
 *Admin only:*
- - /enable <cmd name>: enable that command
- - /disable <cmd name>: disable that command
- - /listcmds: list all possible toggleable commands
-    """
+ - /disable <commandname>: stop users from using the "commandname" command in this group.
+ - /enable <commandname>: allow users to use the "commandname" command in this group again.
+ - /disableable: list all disableable commands.
+ - /disabledel <on/off/yes/no>: delete disabled commands when used by non-admins.
+    """.format(dispatcher.bot.first_name)
 
-    DISABLE_HANDLER = CommandHandler("disable", disable, pass_args=True, filters=Filters.group)
-    ENABLE_HANDLER = CommandHandler("enable", enable, pass_args=True, filters=Filters.group)
-    COMMANDS_HANDLER = CommandHandler(["cmds", "disabled"], commands, filters=Filters.group)
-    TOGGLE_HANDLER = CommandHandler("listcmds", list_cmds, filters=Filters.group)
+    DISABLE_HANDLER = CommandHandler(CMD_PREFIX, "disable", disable, filters=Filters.group)
+    ENABLE_HANDLER = CommandHandler(CMD_PREFIX, "enable", enable, filters=Filters.group)
+#    DISABLEDEL_HANDLER = CommandHandler("disabledel", disable_del, pass_args=True, filters=Filters.group)
+    COMMANDS_HANDLER = CommandHandler(CMD_PREFIX, ["cmds", "disabled"], commands, filters=Filters.group)
+    TOGGLE_HANDLER = CommandHandler(CMD_PREFIX, ["disableable", "listcmds"], list_cmds, filters=Filters.group)
+#    DISABLEDEL = MessageHandler(Filters.command & Filters.group, del_cmds)
 
     dispatcher.add_handler(DISABLE_HANDLER)
     dispatcher.add_handler(ENABLE_HANDLER)
     dispatcher.add_handler(COMMANDS_HANDLER)
     dispatcher.add_handler(TOGGLE_HANDLER)
+#    dispatcher.add_handler(DISABLEDEL)
+#    dispatcher.add_handler(DISABLEDEL_HANDLER)
 
 else:
     DisableAbleCommandHandler = CommandHandler

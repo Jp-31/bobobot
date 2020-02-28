@@ -50,11 +50,15 @@ class WarnSettings(BASE):
     chat_id = Column(String(14), primary_key=True)
     warn_limit = Column(Integer, default=3)
     soft_warn = Column(Boolean, default=False)
+    warn_mode = Column(Integer, default=1)
+    warn_time = Column(UnicodeText, default="0")
 
-    def __init__(self, chat_id, warn_limit=3, soft_warn=False):
+    def __init__(self, chat_id, warn_limit=3, soft_warn=False, warn_mode=2, warn_time="0"):
         self.chat_id = str(chat_id)
         self.warn_limit = warn_limit
         self.soft_warn = soft_warn
+        self.warn_mode = warn_mode
+        self.warn_time = warn_time
 
     def __repr__(self):
         return "<{} has {} possible warns.>".format(self.chat_id, self.warn_limit)
@@ -76,7 +80,7 @@ def warn_user(user_id, chat_id, reason=None):
         warned_user = SESSION.query(Warns).get((user_id, str(chat_id)))
         if not warned_user:
             warned_user = Warns(user_id, str(chat_id))
-            
+
         warned_user.num_warns += 1
         
         if reason is "":
@@ -112,7 +116,7 @@ def remove_warn(user_id, chat_id):
                     temp_reason.append(reason)
                 del temp_reason[-1]
                 warned_user.reasons = temp_reason
-                
+
             SESSION.add(warned_user)
             SESSION.commit()
             removed = True
@@ -217,13 +221,55 @@ def get_warn_setting(chat_id):
     try:
         setting = SESSION.query(WarnSettings).get(str(chat_id))
         if setting:
-            return setting.warn_limit, setting.soft_warn
+            return setting.warn_limit, setting.soft_warn, setting.warn_mode
         else:
-            return 3, False
+            return 3, False, 1
 
     finally:
         SESSION.close()
 
+
+def set_warn_mode(chat_id, warn_mode):
+    with WARN_SETTINGS_LOCK:
+        curr_setting = SESSION.query(WarnSettings).get(str(chat_id))
+        if not curr_setting:
+            curr_setting = WarnSettings(chat_id, warn_mode=warn_mode)
+
+        curr_setting.warn_mode = warn_mode
+
+        SESSION.add(curr_setting)
+        SESSION.commit()
+
+def set_warn_time(chat_id, time_val):
+    with WARN_SETTINGS_LOCK:
+        warn_time = SESSION.query(WarnSettings).get(str(chat_id))
+        if not warn_time:
+            warn_time = WarnSettings(str(chat_id))
+        warn_time.warn_time = str(time_val)
+
+        SESSION.add(warn_time)
+        SESSION.commit()
+
+def get_warn_mode(chat_id):
+    try:
+        setting = SESSION.query(WarnSettings).get(str(chat_id))
+        if setting:
+            return setting.warn_mode, setting.warn_mode
+        else:
+            return 5, False
+
+    finally:
+        SESSION.close()
+
+def get_warn_time(chat_id):
+    try:
+        warn_time = SESSION.query(WarnSettings).get(str(chat_id))
+        if warn_time:
+            return warn_time.warn_time
+        else:
+            return 0, False
+    finally:
+        SESSION.close()
 
 def num_warns():
     try:

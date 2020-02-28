@@ -45,8 +45,8 @@ def extract_user_and_text(message: Message, args: List[str]) -> (Optional[int], 
         user_id = ent.user.id
         text = message.text[ent.offset + ent.length:]
 
-    elif len(args) >= 1 and args[0][0] == '@':
-        user = args[0]
+    elif len(args) >= 1 and args[1].startswith('@'):
+        user = args[1]
         user_id = get_user_id(user)
         if not user_id:
             message.reply_text("I don't have that user in my db. You'll be able to interact with them if "
@@ -59,8 +59,8 @@ def extract_user_and_text(message: Message, args: List[str]) -> (Optional[int], 
             if len(res) >= 3:
                 text = res[2]
 
-    elif len(args) >= 1 and args[0].isdigit():
-        user_id = int(args[0])
+    elif len(args) >= 1 and args[1].isdigit():
+        user_id = int(args[1])
         res = message.text.split(None, 2)
         if len(res) >= 3:
             text = res[2]

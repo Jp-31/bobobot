@@ -23,6 +23,7 @@ class Welcome(BASE):
 
     clean_welcome = Column(BigInteger)
     del_joined = Column(BigInteger)
+    rtl_del = Column(BigInteger)
 
     def __init__(self, chat_id, should_welcome=True, should_goodbye=True):
         self.chat_id = chat_id

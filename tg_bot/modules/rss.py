@@ -2,19 +2,20 @@ import html
 import re
 
 from feedparser import parse
-from telegram import ParseMode, constants
-from telegram.ext import CommandHandler
+from telegram import ParseMode, constants, Update
+from telegram.ext import CommandHandler, CallbackContext
 
-from tg_bot import dispatcher, updater
+from tg_bot import dispatcher, updater, CMD_PREFIX
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.sql import rss_sql as sql
 
 
-def show_url(bot, update, args):
+def show_url(update: Update, context: CallbackContext):
     tg_chat_id = str(update.effective_chat.id)
+    args = update.effective_message.text.split(" ")
 
     if len(args) >= 1:
-        tg_feed_link = args[0]
+        tg_feed_link = args[1]
         link_processed = parse(tg_feed_link)
 
         if link_processed.bozo == 0:
@@ -42,9 +43,9 @@ def show_url(bot, update, args):
                                                                      html.escape(entry_link))
                 final_message = feed_message + entry_message
 
-                bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
+                context.bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
             else:
-                bot.send_message(chat_id=tg_chat_id, text=feed_message, parse_mode=ParseMode.HTML)
+                context.bot.send_message(chat_id=tg_chat_id, text=feed_message, parse_mode=ParseMode.HTML)
         else:
             update.effective_message.reply_text("This link is not an RSS Feed link")
     else:
@@ -72,13 +73,14 @@ def list_urls(bot, update):
 
 
 @user_admin
-def add_url(bot, update, args):
+def add_url(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
     if len(args) >= 1:
         chat = update.effective_chat
 
         tg_chat_id = str(update.effective_chat.id)
 
-        tg_feed_link = args[0]
+        tg_feed_link = args[1]
 
         link_processed = parse(tg_feed_link)
 
@@ -106,11 +108,12 @@ def add_url(bot, update, args):
 
 
 @user_admin
-def remove_url(bot, update, args):
+def remove_url(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
     if len(args) >= 1:
         tg_chat_id = str(update.effective_chat.id)
 
-        tg_feed_link = args[0]
+        tg_feed_link = args[1]
 
         link_processed = parse(tg_feed_link)
 
@@ -129,7 +132,8 @@ def remove_url(bot, update, args):
         update.effective_message.reply_text("URL missing")
 
 
-def rss_update(bot, job):
+def rss_update(context):
+    job = context.job
     user_data = sql.get_all()
 
     # this loop checks for every row in the DB
@@ -166,26 +170,27 @@ def rss_update(bot, job):
                 final_message = "<b>{}</b>\n\n{}".format(html.escape(title), html.escape(link))
 
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
-                    bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
+                    context.bot.send_message(job.context, chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
                 else:
-                    bot.send_message(chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
+                    context.bot.send_message(job.context, chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
                                      parse_mode=ParseMode.HTML)
         else:
             for link, title in zip(reversed(new_entry_links[-5:]), reversed(new_entry_titles[-5:])):
                 final_message = "<b>{}</b>\n\n{}".format(html.escape(title), html.escape(link))
 
                 if len(final_message) <= constants.MAX_MESSAGE_LENGTH:
-                    bot.send_message(chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
+                    context.bot.send_message(job.context, chat_id=tg_chat_id, text=final_message, parse_mode=ParseMode.HTML)
                 else:
-                    bot.send_message(chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
+                    context.bot.send_message(job.context, chat_id=tg_chat_id, text="<b>Warning:</b> The message is too long to be sent",
                                      parse_mode=ParseMode.HTML)
 
-            bot.send_message(chat_id=tg_chat_id, parse_mode=ParseMode.HTML,
+            context.bot.send_message(job.context, chat_id=tg_chat_id, parse_mode=ParseMode.HTML,
                              text="<b>Warning: </b>{} occurrences have been left out to prevent spam"
                              .format(len(new_entry_links) - 5))
 
 
-def rss_set(bot, job):
+def rss_set(context):
+    job = context.job
     user_data = sql.get_all()
 
     # this loop checks for every row in the DB
@@ -233,10 +238,10 @@ job_rss_update = job.run_repeating(rss_update, interval=60, first=60)
 job_rss_set.enabled = True
 job_rss_update.enabled = True
 
-SHOW_URL_HANDLER = CommandHandler("rss", show_url, pass_args=True)
-ADD_URL_HANDLER = CommandHandler("addrss", add_url, pass_args=True)
-REMOVE_URL_HANDLER = CommandHandler("removerss", remove_url, pass_args=True)
-LIST_URLS_HANDLER = CommandHandler("listrss", list_urls)
+SHOW_URL_HANDLER = CommandHandler(CMD_PREFIX, "rss", show_url)
+ADD_URL_HANDLER = CommandHandler(CMD_PREFIX, "addrss", add_url)
+REMOVE_URL_HANDLER = CommandHandler(CMD_PREFIX, "removerss", remove_url)
+LIST_URLS_HANDLER = CommandHandler(CMD_PREFIX, "listrss", list_urls)
 
 dispatcher.add_handler(SHOW_URL_HANDLER)
 dispatcher.add_handler(ADD_URL_HANDLER)

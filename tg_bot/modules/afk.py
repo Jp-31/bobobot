@@ -2,9 +2,9 @@ from typing import Optional
 
 from telegram import Message, Update, Bot, User
 from telegram import MessageEntity
-from telegram.ext import Filters, MessageHandler, run_async
+from telegram.ext import CallbackContext, CommandHandler, Filters, MessageHandler, RegexHandler, run_async
 
-from tg_bot import dispatcher
+from tg_bot import dispatcher, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler, DisableAbleRegexHandler
 from tg_bot.modules.sql import afk_sql as sql
 from tg_bot.modules.users import get_user_id
@@ -12,9 +12,8 @@ from tg_bot.modules.users import get_user_id
 AFK_GROUP = 7
 AFK_REPLY_GROUP = 8
 
-
 @run_async
-def afk(bot: Bot, update: Update):
+def afk(update: Update, context: CallbackContext):
     args = update.effective_message.text.split(None, 1)
     if len(args) >= 2:
         reason = args[1]
@@ -26,7 +25,7 @@ def afk(bot: Bot, update: Update):
 
 
 @run_async
-def no_longer_afk(bot: Bot, update: Update):
+def no_longer_afk(update: Update, context: CallbackContext):
     user = update.effective_user  # type: Optional[User]
 
     if not user:  # ignore channels
@@ -38,7 +37,7 @@ def no_longer_afk(bot: Bot, update: Update):
 
 
 @run_async
-def reply_afk(bot: Bot, update: Update):
+def reply_afk(update: Update, context: CallbackContext):
     message = update.effective_message  # type: Optional[Message]
     if message.entities and message.parse_entities([MessageEntity.TEXT_MENTION, MessageEntity.MENTION]):
         entities = message.parse_entities([MessageEntity.TEXT_MENTION, MessageEntity.MENTION])
@@ -52,7 +51,7 @@ def reply_afk(bot: Bot, update: Update):
                 if not user_id:
                     # Should never happen, since for a user to become AFK they must have spoken. Maybe changed username?
                     return
-                chat = bot.get_chat(user_id)
+                chat = context.bot.get_chat(user_id)
                 fst_name = chat.first_name
 
             else:
@@ -80,8 +79,8 @@ When marked as AFK, any mentions will be replied to with a message to say you're
 
 __mod_name__ = "AFK"
 
-AFK_HANDLER = DisableAbleCommandHandler("afk", afk)
-AFK_REGEX_HANDLER = DisableAbleRegexHandler("(?i)brb", afk, friendly="afk")
+AFK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "afk", afk)
+AFK_REGEX_HANDLER = RegexHandler("(?i)brb", afk, friendly="afk")
 NO_AFK_HANDLER = MessageHandler(Filters.all & Filters.group, no_longer_afk)
 AFK_REPLY_HANDLER = MessageHandler(Filters.entity(MessageEntity.MENTION) | Filters.entity(MessageEntity.TEXT_MENTION),
                                    reply_afk)

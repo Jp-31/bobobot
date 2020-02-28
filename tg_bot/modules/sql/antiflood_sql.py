@@ -1,6 +1,6 @@
 import threading
 
-from sqlalchemy import Column, Integer, String, Boolean
+from sqlalchemy import Column, Integer, String, Boolean, UnicodeText
 
 from tg_bot.modules.sql import BASE, SESSION
 
@@ -16,10 +16,12 @@ class FloodControl(BASE):
     count = Column(Integer, default=DEF_COUNT)
     limit = Column(Integer, default=DEF_LIMIT)
     soft_flood = Column(Boolean, default=False)
+    flood_time = Column(UnicodeText, default="0")
 
-    def __init__(self, chat_id, soft_flood=False):
+    def __init__(self, chat_id, soft_flood=False, flood_time="0"):
         self.chat_id = str(chat_id)  # ensure string
         self.soft_flood = soft_flood
+        self.flood_time = flood_time
 
     def __repr__(self):
         return "<flood control for %s>" % self.chat_id
@@ -56,6 +58,26 @@ def set_flood_strength(chat_id, soft_flood):
 
         SESSION.add(flood)
         SESSION.commit()
+
+def set_flood_time(chat_id, time_val):
+    with INSERTION_LOCK:
+        flood_time = SESSION.query(FloodControl).get(str(chat_id))
+        if not flood_time:
+            flood_time = FloodControl(str(chat_id))
+        flood_time.flood_time = str(time_val)
+
+        SESSION.add(flood_time)
+        SESSION.commit()
+
+def get_flood_time(chat_id):
+    try:
+        flood_time = SESSION.query(FloodControl).get(str(chat_id))
+        if flood_time:
+            return flood_time.flood_time
+        else:
+            return False, "0"
+    finally:
+        SESSION.close()
 
 def update_flood(chat_id: str, user_id) -> bool:
     if str(chat_id) in CHAT_FLOOD:

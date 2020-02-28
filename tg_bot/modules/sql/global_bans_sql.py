@@ -29,13 +29,17 @@ class GbanSettings(BASE):
     __tablename__ = "gban_settings"
     chat_id = Column(String(14), primary_key=True)
     setting = Column(Boolean, default=True, nullable=False)
+    gban_alert = Column(Boolean, default=True)
 
-    def __init__(self, chat_id, enabled):
+    def __init__(self, chat_id, enabled, gban_alert=True):
         self.chat_id = str(chat_id)
         self.setting = enabled
+        self.gban_alert = gban_alert
 
     def __repr__(self):
         return "<Gban setting {} ({})>".format(self.chat_id, self.setting)
+        return "<Gban alert {} ({})>".format(self.chat_id, self.gban_alert)
+
 
 
 GloballyBannedUsers.__table__.create(checkfirst=True)
@@ -45,6 +49,7 @@ GBANNED_USERS_LOCK = threading.RLock()
 GBAN_SETTING_LOCK = threading.RLock()
 GBANNED_LIST = set()
 GBANSTAT_LIST = set()
+GBANALERT_LIST = set()
 
 
 def gban_user(user_id, name, reason=None):
@@ -102,6 +107,39 @@ def get_gban_list():
     finally:
         SESSION.close()
 
+def enable_alert(chat_id):
+    with GBAN_SETTING_LOCK:
+        loud = SESSION.query(GbanSettings).get(str(chat_id))
+        if not loud:
+            loud = GbanSettings(chat_id, True)
+
+        loud.gban_alert = True
+        SESSION.add(loud)
+        SESSION.commit()
+        if str(chat_id) in GBANALERT_LIST:
+            GBANALERT_LIST.remove(str(chat_id))
+
+
+def disable_alert(chat_id):
+    with GBAN_SETTING_LOCK:
+        quiet = SESSION.query(GbanSettings).get(str(chat_id))
+        if not quiet:
+            quiet = GbanSettings(chat_id, False)
+
+        quiet.gban_alert = False
+        SESSION.add(quiet)
+        SESSION.commit()
+        GBANALERT_LIST.add(str(chat_id))
+        
+def get_gban_alert(chat_id):
+    with GBAN_SETTING_LOCK:
+        setting =  SESSION.query(GbanSettings).get(str(chat_id))
+        if not setting:
+            SESSION.close()
+            return None
+        SESSION.close()
+        return setting.gban_alert
+        
 
 def enable_gbans(chat_id):
     with GBAN_SETTING_LOCK:
@@ -127,9 +165,11 @@ def disable_gbans(chat_id):
         SESSION.commit()
         GBANSTAT_LIST.add(str(chat_id))
 
-
 def does_chat_gban(chat_id):
     return str(chat_id) not in GBANSTAT_LIST
+
+def does_chat_alert(chat_id):
+    return str(chat_id) not in GBANALERT_LIST
 
 
 def num_gbanned_users():

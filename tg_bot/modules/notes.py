@@ -1,17 +1,18 @@
-import re
+import html, re
 from io import BytesIO
 from typing import Optional, List
 
 from telegram import MAX_MESSAGE_LENGTH, ParseMode, InlineKeyboardMarkup
 from telegram import Message, Update, Bot
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, RegexHandler
+from telegram.ext import CommandHandler, RegexHandler, CallbackContext
 from telegram.ext.dispatcher import run_async
-from telegram.utils.helpers import escape_markdown, mention_markdown
+from telegram.utils.helpers import escape_markdown, mention_markdown, mention_html
 
 import tg_bot.modules.sql.notes_sql as sql
-from tg_bot import dispatcher, MESSAGE_DUMP, LOGGER
+from tg_bot import dispatcher, MESSAGE_DUMP, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_note_type
@@ -133,28 +134,31 @@ def get(bot, update, notename, show_none=True, no_format=False):
 
 
 @run_async
-def cmd_get(bot: Bot, update: Update, args: List[str]):
-    if len(args) >= 2 and args[1].lower() == "noformat":
-        get(bot, update, args[0], show_none=True, no_format=True)
+def cmd_get(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
+    if len(args) >= 3 and args[2].lower() == "noformat":
+        get(context.bot, update, args[1], show_none=True, no_format=True)
     elif len(args) >= 1:
-        get(bot, update, args[0], show_none=True)
+        get(context.bot, update, args[1], show_none=True)
     else:
         update.effective_message.reply_text("Get rekt")
 
 
 @run_async
-def hash_get(bot: Bot, update: Update):
+def hash_get(update: Update, context: CallbackContext):
     message = update.effective_message.text
     fst_word = message.split()[0]
     no_hash = fst_word[1:]
-    get(bot, update, no_hash, show_none=False)
+    get(context.bot, update, no_hash, show_none=False)
 
 
 @run_async
 @user_admin
-def save(bot: Bot, update: Update):
+@loggable
+def save(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     chat = update.effective_chat
+    user = update.effective_user
     msg = update.effective_message  # type: Optional[Message]
     chat_name = chat.title or chat.first or chat.username
     note_name, text, data_type, content, buttons = get_note_type(msg)
@@ -168,8 +172,17 @@ def save(bot: Bot, update: Update):
 
     sql.add_note_to_db(chat_id, note_name, text, data_type, buttons=buttons, file=content)
 
+    log = "<b>{}:</b>" \
+          "\n#NOTES" \
+          "\n<b>• Action:</b> saved" \
+          "\n<b>• Admin:</b> {}" \
+          "\n<b>• Note name:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name), note_name)
+    
     msg.reply_text(
-        "Yas! Saved `{note_name}` for *{chat_name}*.\nGet it with `/get {note_name}`, or `#{note_name}`".format(note_name=note_name, chat_name=chat_name), parse_mode=ParseMode.MARKDOWN)
+        "Yas! Saved `{note_name}` for *{chat_name}*.\nGet "
+        "it with `/get {note_name}`, or `#{note_name}`".format(note_name=note_name, chat_name=chat_name), 
+                                                               parse_mode=ParseMode.MARKDOWN)
+    return log
 
     if msg.reply_to_message and msg.reply_to_message.from_user.is_bot:
         if text:
@@ -187,23 +200,34 @@ def save(bot: Bot, update: Update):
 
 @run_async
 @user_admin
-def clear(bot: Bot, update: Update, args: List[str]):
+@loggable
+def clear(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     msg = update.effective_message
+    user = update.effective_user
     chat = update.effective_chat
     chat_name = chat.title or chat.first or chat.username
     note_name, text, data_type, content, buttons = get_note_type(msg)
+    args = msg.text.split(" ")
+    
     if len(args) >= 1:
-        notename = args[0]
+        notename = args[1]
 
         if sql.rm_note(chat_id, notename):
             update.effective_message.reply_text("Note for '`{note_name}`' has been deleted!".format(note_name=note_name), parse_mode=ParseMode.MARKDOWN)
         else:
             update.effective_message.reply_text("Unfortunately, There is no such notes saved on {chat_name}!".format(chat_name=chat_name))
+    
+    log = "<b>{}:</b>" \
+          "\n#NOTES" \
+          "\n<b>• Action:</b> cleared" \
+          "\n<b>• Admin:</b> {}" \
+          "\n<b>• Note name:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name), note_name)
+    return log
 
 
 @run_async
-def list_notes(bot: Bot, update: Update):
+def list_notes(update: Update, context: CallbackContext):
     chat_id = update.effective_chat.id
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
@@ -293,13 +317,13 @@ This will retrieve the note and send it without formatting it; getting you the r
 
 __mod_name__ = "Notes"
 
-GET_HANDLER = CommandHandler("get", cmd_get, pass_args=True)
+GET_HANDLER = CommandHandler(CMD_PREFIX, "get", cmd_get)
 HASH_GET_HANDLER = RegexHandler(r"^#[^\s]+", hash_get)
 
-SAVE_HANDLER = CommandHandler("save", save)
-DELETE_HANDLER = CommandHandler("clear", clear, pass_args=True)
+SAVE_HANDLER = CommandHandler(CMD_PREFIX, "save", save)
+DELETE_HANDLER = CommandHandler(CMD_PREFIX, "clear", clear)
 
-LIST_HANDLER = DisableAbleCommandHandler(["notes", "saved"], list_notes, admin_ok=True)
+LIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["notes", "saved"], list_notes, admin_ok=True)
 
 dispatcher.add_handler(GET_HANDLER)
 dispatcher.add_handler(SAVE_HANDLER)

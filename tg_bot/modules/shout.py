@@ -1,13 +1,16 @@
 from telegram import Update, Bot
-from telegram.ext import run_async
+from telegram.ext import CallbackContext, CommandHandler, run_async
 
 from tg_bot.modules.disable import DisableAbleCommandHandler
-from tg_bot import dispatcher
+from tg_bot import dispatcher, CMD_PREFIX
 
 @run_async
-def shout(bot: Bot, update: Update, args):
+def shout(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
+    args.remove(args[0])
     msg = "```"
     text = " ".join(args)
+    text
     result = []
     result.append(' '.join([s for s in text]))
     for pos, symbol in enumerate(text[1:]):
@@ -21,7 +24,7 @@ def shout(bot: Bot, update: Update, args):
 __help__ = """
  A little piece of fun wording! Give a loud shout out in the chatroom.
  
- i.e /shout HELP, bot replies with huge coded HELP letters within the square. 
+ i.e /shout HELP, {} replies with huge coded HELP letters within the square. 
  
  - /shout <keyword>: write anything you want to give loud shout.
     ```
@@ -30,10 +33,10 @@ __help__ = """
     s   s
     t     t
     ```
-"""
+""".format(dispatcher.bot.first_name)
 
 __mod_name__ = "Shout"
 
-SHOUT_HANDLER = DisableAbleCommandHandler("shout", shout, pass_args=True)
+SHOUT_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "shout", shout)
 
 dispatcher.add_handler(SHOUT_HANDLER)

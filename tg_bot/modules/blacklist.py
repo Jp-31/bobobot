@@ -4,13 +4,15 @@ from typing import Optional, List
 
 from telegram import Message, Chat, Update, Bot, ParseMode
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, MessageHandler, Filters, run_async
+from telegram.ext import CommandHandler, MessageHandler, Filters, run_async, CallbackContext
+from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.blacklist_sql as sql
-from tg_bot import dispatcher, LOGGER
+from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.helper_funcs.chat_status import user_admin, user_not_admin
-from tg_bot.modules.helper_funcs.extraction import extract_text
+from tg_bot.modules.helper_funcs.extraction import extract_user_and_text, extract_text
 from tg_bot.modules.helper_funcs.misc import split_message
 
 BLACKLIST_GROUP = 11
@@ -19,15 +21,16 @@ BASE_BLACKLIST_STRING = "The following blacklist filters are currently active in
 
 
 @run_async
-def blacklist(bot: Bot, update: Update, args: List[str]):
+def blacklist(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     chat = update.effective_chat  # type: Optional[Chat]
     chat_name = chat.title or chat.first or chat.username
     all_blacklisted = sql.get_chat_blacklist(chat.id)
+    args = msg.text.split(" ")
 
     filter_list = BASE_BLACKLIST_STRING
 
-    if len(args) > 0 and args[0].lower() == 'copy':
+    if len(args) > 0 and args[1].lower() == 'copy':
         for trigger in all_blacklisted:
             filter_list += "<code>{}</code>\n".format(html.escape(trigger))
     else:
@@ -44,23 +47,41 @@ def blacklist(bot: Bot, update: Update, args: List[str]):
 
 @run_async
 @user_admin
-def add_blacklist(bot: Bot, update: Update):
+@loggable
+def add_blacklist(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user
     words = msg.text.split(None, 1)
     if len(words) > 1:
         text = words[1]
         to_blacklist = list(set(trigger.strip() for trigger in text.split("\n") if trigger.strip()))
+        
+        log = "<b>{}:</b>" \
+          "\n#BLACKLISTS" \
+          "\n<b>• Action:</b> added" \
+          "\n<b>• Admin:</b> {}".format(html.escape(chat.title), mention_html(user.id, 
+                                                                  user.first_name))
         for trigger in to_blacklist:
             sql.add_to_blacklist(chat.id, trigger.lower())
 
         if len(to_blacklist) == 1:
             msg.reply_text("Added <code>{}</code> to the blacklist!".format(html.escape(to_blacklist[0])),
                            parse_mode=ParseMode.HTML)
+            log += "\n<b>• Trigger:</b>\n"
+            for trigger in to_blacklist:
+               log += "  <code>{}</code>\n".format(trigger)
 
         else:
             msg.reply_text(
                 "Added <code>{}</code> triggers to the blacklist.".format(len(to_blacklist)), parse_mode=ParseMode.HTML)
+            num = 1
+            log += "\n<b>• Triggers:</b>\n"
+            for trigger in to_blacklist:
+               log += "  {}. <code>{}</code>\n".format(num, trigger)
+               num += 1 
+        
+        return log
 
     else:
         msg.reply_text("Tell me which words you would like to add to the blacklist.")
@@ -68,14 +89,21 @@ def add_blacklist(bot: Bot, update: Update):
 
 @run_async
 @user_admin
-def unblacklist(bot: Bot, update: Update):
+@loggable
+def unblacklist(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
+    user = update.effective_user # type: Optional[User]
     chat = update.effective_chat  # type: Optional[Chat]
     words = msg.text.split(None, 1)
     if len(words) > 1:
         text = words[1]
         to_unblacklist = list(set(trigger.strip() for trigger in text.split("\n") if trigger.strip()))
         successful = 0
+        log = "<b>{}:</b>" \
+              "\n#BLACKLISTS" \
+              "\n<b>• Action:</b> cleared" \
+              "\n<b>• Admin:</b> {}".format(html.escape(chat.title), mention_html(user.id, 
+                                                                  user.first_name), to_unblacklist)
         for trigger in to_unblacklist:
             success = sql.rm_from_blacklist(chat.id, trigger.lower())
             if success:
@@ -85,6 +113,9 @@ def unblacklist(bot: Bot, update: Update):
             if successful:
                 msg.reply_text("Removed <code>{}</code> from the blacklist!".format(html.escape(to_unblacklist[0])),
                                parse_mode=ParseMode.HTML)
+                log += "\n<b>• Trigger:</b>\n"
+                for trigger in to_unblacklist:
+                    log += "  <code>{}</code>\n".format(trigger)
             else:
                 msg.reply_text("This isn't a blacklisted trigger...!")
 
@@ -92,6 +123,11 @@ def unblacklist(bot: Bot, update: Update):
             msg.reply_text(
                 "Removed <code>{}</code> triggers from the blacklist.".format(
                     successful), parse_mode=ParseMode.HTML)
+            num = 1
+            log += "\n<b>• Triggers:</b>\n"
+            for trigger in to_unblacklist:
+                log += "  {}. <code>{}</code>\n".format(num, trigger)
+                num += 1 
 
         elif not successful:
             msg.reply_text(
@@ -103,13 +139,15 @@ def unblacklist(bot: Bot, update: Update):
                 "Removed <code>{}</code> triggers from the blacklist. {} did not exist, "
                 "so were not removed.".format(successful, len(to_unblacklist) - successful),
                 parse_mode=ParseMode.HTML)
+        
+        return log
     else:
         msg.reply_text("Tell me which words you would like to remove from the blacklist.")
 
 
 @run_async
 @user_not_admin
-def del_blacklist(bot: Bot, update: Update):
+def del_blacklist(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     message = update.effective_message  # type: Optional[Message]
     to_match = extract_text(message)
@@ -161,13 +199,12 @@ lines will allow you to add multiple triggers.
 multiple triggers at once.
  - /rmblacklist <triggers>: Same as above.
  
-Tip: To copy list of saved blacklist simply use `/blacklist copy`, the bot will send non-bulleted list of blacklist.
-"""
+Tip: To copy list of saved blacklist simply use `/blacklist copy`, {} will send non-bulleted list of blacklist.
+""".format(dispatcher.bot.first_name)
 
-BLACKLIST_HANDLER = DisableAbleCommandHandler("blacklist", blacklist, filters=Filters.group, pass_args=True,
-                                              admin_ok=True)
-ADD_BLACKLIST_HANDLER = CommandHandler("addblacklist", add_blacklist, filters=Filters.group)
-UNBLACKLIST_HANDLER = CommandHandler(["unblacklist", "rmblacklist"], unblacklist, filters=Filters.group)
+BLACKLIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "blacklist", blacklist, filters=Filters.group, admin_ok=True)
+ADD_BLACKLIST_HANDLER = CommandHandler(CMD_PREFIX, "addblacklist", add_blacklist, filters=Filters.group)
+UNBLACKLIST_HANDLER = CommandHandler(CMD_PREFIX, ["unblacklist", "rmblacklist"], unblacklist, filters=Filters.group)
 BLACKLIST_DEL_HANDLER = MessageHandler(
     (Filters.text | Filters.command | Filters.sticker | Filters.photo) & Filters.group, del_blacklist)
 

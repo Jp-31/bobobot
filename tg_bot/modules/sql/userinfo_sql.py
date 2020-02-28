@@ -9,10 +9,12 @@ class UserInfo(BASE):
     __tablename__ = "userinfo"
     user_id = Column(Integer, primary_key=True)
     info = Column(UnicodeText)
+    nick_n = Column(UnicodeText)
 
-    def __init__(self, user_id, info):
+    def __init__(self, user_id, info, nick_n=""):
         self.user_id = user_id
         self.info = info
+        self.nick_n = nick_n
 
     def __repr__(self):
         return "<User info %d>" % self.user_id
@@ -36,6 +38,23 @@ UserBio.__table__.create(checkfirst=True)
 
 INSERTION_LOCK = threading.RLock()
 
+def get_user_nick(user_id):
+    userinfo = SESSION.query(UserInfo).get(user_id)
+    SESSION.close()
+    if userinfo:
+        return userinfo.nick_n
+    return None
+
+
+def set_user_nick(user_id, nick_n):
+    with INSERTION_LOCK:
+        userinfo = SESSION.query(UserInfo).get(user_id)
+        if userinfo:
+            userinfo.nick_n = nick_n
+        else:
+            userinfo = UserInfo(user_id, nick_n)
+        SESSION.add(userinfo)
+        SESSION.commit()
 
 def get_user_me_info(user_id):
     userinfo = SESSION.query(UserInfo).get(user_id)

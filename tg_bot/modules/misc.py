@@ -1,21 +1,25 @@
-import html
+import html, time
 import json
 import random
 from datetime import datetime
 from typing import Optional, List
 import time
 import requests
-from telegram import Message, Chat, Update, Bot, MessageEntity
-from telegram import ParseMode
-from telegram.ext import CommandHandler, run_async, Filters
+
+import tg_bot.modules.sql.userinfo_sql as sql
+from telegram import Message, Chat, Update, Bot, MessageEntity, MAX_MESSAGE_LENGTH
+from telegram.error import BadRequest
+from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, TelegramError
+from telegram.ext import CommandHandler, run_async, Filters, CallbackContext
 from telegram.utils.helpers import escape_markdown, mention_html
 
-from tg_bot import dispatcher, OWNER_ID, SUDO_USERS, SUPPORT_USERS, SUPER_ADMINS, WHITELIST_USERS, BAN_STICKER
+from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, SUDO_USERS, SUPPORT_USERS, SUPER_ADMINS, WHITELIST_USERS, BAN_STICKER, CMD_PREFIX
 from tg_bot.__main__ import GDPR
 from tg_bot.__main__ import STATS, USER_INFO
 from tg_bot.modules.disable import DisableAbleCommandHandler, DisableAbleRegexHandler
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.helper_funcs.filters import CustomFilters
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 RUN_STRINGS = (
     "Where do you think you're going?",
@@ -78,6 +82,110 @@ RUN_STRINGS = (
     "Han shot first. So will I.",
     "What are you running after, a white rabbit?",
     "As The Doctor would say... RUN!",
+)
+
+RNUM_STRINGS = (
+    "0  ",
+    "1  ",
+    "2  ",
+    "3  ",
+    "4  ",
+    "5  ",
+    "6  ",
+    "7  ",
+    "8  ",
+    "9  ",
+    "10 ",
+    "11 ",
+    "12 ",
+    "13 ",
+    "14 ",
+    "15 ",
+    "16 ",
+    "17 ",
+    "18 ",
+    "19 ",
+    "20 ",
+    "21 ",
+    "22 ",
+    "23 ",
+    "24 ",
+    "25 ",
+    "26 ",
+    "27 ",
+    "28 ",
+    "29 ",
+    "30 ",
+    "31 ",
+    "32 ",
+    "33 ",
+    "34 ",
+    "35 ",
+    "36 ",
+    "37 ",
+    "38 ",
+    "39 ",
+    "40 ",
+    "41 ",
+    "42 ",
+    "43 ",
+    "44 ",
+    "45 ",
+    "46 ",
+    "47 ",
+    "48 ",
+    "49 ",
+    "50 ",
+    "51 ",
+    "52 ",
+    "53 ",
+    "54 ",
+    "55 ",
+    "56 ",
+    "57 ",
+    "58 ",
+    "59 ",
+    "60 ",
+    "61 ",
+    "62 ",
+    "63 ",
+    "64 ",
+    "65 ",
+    "66 ",
+    "67 ",
+    "68 ",
+    "69 ",
+    "70 ",
+    "71 ",
+    "72 ",
+    "73 ",
+    "74 ",
+    "75 ",
+    "76 ",
+    "77 ",
+    "78 ",
+    "79 ",
+    "80 ",
+    "81 ",
+    "82 ",
+    "83 ",
+    "84 ",
+    "85 ",
+    "86 ",
+    "87 ",
+    "88 ",
+    "89 ",
+    "90 ",
+    "91 ",
+    "92 ",
+    "93 ",
+    "94 ",
+    "95 ",
+    "96 ",
+    "97 ",
+    "98 ",
+    "99 ",
+    "100",
 )
 
 SLAP_TEMPLATES = (
@@ -205,18 +313,55 @@ HUG = (
     "kissed",
     "pinches",
 )
+
+GREETING = (
+    "Yes?",
+    "Yo!",
+    "Hiya!",
+    "It’s nice to meet you",
+    "Sup",
+    "Hi",
+    "What's up?",
+)
+
 GMAPS_LOC = "https://maps.googleapis.com/maps/api/geocode/json"
 GMAPS_TIME = "https://maps.googleapis.com/maps/api/timezone/json"
 
+@run_async
+def greet(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(None, 1)
+    if len(args) >= 2:
+        reason = args[1]
+    else:
+        reason = ""
+
+    update.effective_message.reply_text(random.choice(GREETING))
 
 @run_async
-def runs(bot: Bot, update: Update):
+def runs(update: Update, context: CallbackContext):
     update.effective_message.reply_text(random.choice(RUN_STRINGS))
 
+@run_async
+def rnum(update: Update, context: CallbackContext):
+    result = "Result is: "
+    msg = update.effective_message
+    msg.reply_text(result + random.choice(RNUM_STRINGS))
 
 @run_async
-def slap(bot: Bot, update: Update, args: List[str]):
+def firstmsg(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
+    chat = update.effective_chat # type: Optional[Chat]
+    
+    try:
+        context.bot.sendMessage(msg.chat.id, "First message of {}.".format(chat.title), reply_to_message_id=1)
+    except BadRequest:
+        return msg.reply_text("Seems like first message of {} was deleted.".format(chat.title))    
+
+
+@run_async
+def slap(update: Update, context: CallbackContext):
+    msg = update.effective_message  # type: Optional[Message]
+    args= update.effective_message.text.split(" ")
 
     # reply to correct message
     reply_text = msg.reply_to_message.reply_text if msg.reply_to_message else msg.reply_text
@@ -229,7 +374,7 @@ def slap(bot: Bot, update: Update, args: List[str]):
 
     user_id = extract_user(update.effective_message, args)
     if user_id:
-        slapped_user = bot.get_chat(user_id)
+        slapped_user = context.bot.get_chat(user_id)
         user1 = curr_user
         if slapped_user.username:
             user2 = "@" + escape_markdown(slapped_user.username)
@@ -239,7 +384,7 @@ def slap(bot: Bot, update: Update, args: List[str]):
 
     # if no target found, bot targets the sender
     else:
-        user1 = "[{}](tg://user?id={})".format(bot.first_name, bot.id)
+        user1 = "[{}](tg://user?id={})".format(context.bot.first_name, context.bot.id)
         user2 = curr_user
 
     temp = random.choice(SLAP_TEMPLATES)
@@ -252,8 +397,9 @@ def slap(bot: Bot, update: Update, args: List[str]):
     reply_text(repl, parse_mode=ParseMode.MARKDOWN)
 
 @run_async
-def punch(bot: Bot, update: Update, args: List[str]):
+def punch(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
 
     # reply to correct message
     reply_text = msg.reply_to_message.reply_text if msg.reply_to_message else msg.reply_text
@@ -266,7 +412,7 @@ def punch(bot: Bot, update: Update, args: List[str]):
 
     user_id = extract_user(update.effective_message, args)
     if user_id:
-        punched_user = bot.get_chat(user_id)
+        punched_user = context.bot.get_chat(user_id)
         user1 = curr_user
         if punched_user.username:
             user2 = "@" + escape_markdown(punched_user.username)
@@ -276,7 +422,7 @@ def punch(bot: Bot, update: Update, args: List[str]):
 
     # if no target found, bot targets the sender
     else:
-        user1 = "[{}](tg://user?id={})".format(bot.first_name, bot.id)
+        user1 = "[{}](tg://user?id={})".format(context.bot.first_name, context.bot.id)
         user2 = curr_user
 
     temp = random.choice(PUNCH_TEMPLATES)
@@ -290,8 +436,9 @@ def punch(bot: Bot, update: Update, args: List[str]):
 
 
 @run_async
-def hug(bot: Bot, update: Update, args: List[str]):
+def hug(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
 
     # reply to correct message
     reply_text = msg.reply_to_message.reply_text if msg.reply_to_message else msg.reply_text
@@ -304,7 +451,7 @@ def hug(bot: Bot, update: Update, args: List[str]):
 
     user_id = extract_user(update.effective_message, args)
     if user_id:
-        hugged_user = bot.get_chat(user_id)
+        hugged_user = context.bot.get_chat(user_id)
         user1 = curr_user
         if hugged_user.username:
             user2 = "@" + escape_markdown(hugged_user.username)
@@ -314,7 +461,7 @@ def hug(bot: Bot, update: Update, args: List[str]):
 
     # if no target found, bot targets the sender
     else:
-        user1 = "Awwh! [{}](tg://user?id={})".format(bot.first_name, bot.id)
+        user1 = "Awwh! [{}](tg://user?id={})".format(context.bot.first_name, context.bot.id)
         user2 = curr_user
 
     temp = random.choice(HUG_TEMPLATES)
@@ -327,7 +474,7 @@ def hug(bot: Bot, update: Update, args: List[str]):
 
 
 @run_async
-def get_bot_ip(bot: Bot, update: Update):
+def get_bot_ip(update: Update, context: CallbackContext):
     """ Sends the bot's IP address, so as to be able to ssh in if necessary.
         OWNER ONLY.
     """
@@ -336,7 +483,8 @@ def get_bot_ip(bot: Bot, update: Update):
 
 
 @run_async
-def get_id(bot: Bot, update: Update, args: List[str]):
+def get_id(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
     user_id = extract_user(update.effective_message, args)
     if user_id:
         if update.effective_message.reply_to_message and update.effective_message.reply_to_message.forward_from:
@@ -350,7 +498,7 @@ def get_id(bot: Bot, update: Update, args: List[str]):
                     user1.id),
                 parse_mode=ParseMode.MARKDOWN)
         else:
-            user = bot.get_chat(user_id)
+            user = context.bot.get_chat(user_id)
             update.effective_message.reply_text("{}'s id is `{}`.".format(escape_markdown(user.first_name), user.id),
                                                 parse_mode=ParseMode.MARKDOWN)
     else:
@@ -365,21 +513,25 @@ def get_id(bot: Bot, update: Update, args: List[str]):
 
 
 @run_async
-def info(bot: Bot, update: Update, args: List[str]):
+def info(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
+    
     user_id = extract_user(update.effective_message, args)
 
     if user_id:
-        user = bot.get_chat(user_id)
+        user = context.bot.get_chat(user_id)
 
-    elif not msg.reply_to_message and not args:
+    elif not msg.reply_to_message and len(args) <= 1:
+        print("Testing")
         user = msg.from_user
 
-    elif not msg.reply_to_message and (not args or (
-            len(args) >= 1 and not args[0].startswith("@") and not args[0].isdigit() and not msg.parse_entities(
-        [MessageEntity.TEXT_MENTION]))):
-        msg.reply_text("I can't extract a user from this.")
-        return
+    elif len(args) >= 2:
+        if not msg.reply_to_message and (not args or (
+                len(args) >= 1 and not args[1].startswith("@") and not args[1].isdigit() and not msg.parse_entities(
+            [MessageEntity.TEXT_MENTION]))):
+            msg.reply_text("I can't extract a user from this.")
+            return
 
     else:
         return
@@ -387,9 +539,13 @@ def info(bot: Bot, update: Update, args: List[str]):
     text = "<b>User info</b>:" \
            "\nID: <code>{}</code>" \
            "\nFirst Name: {}".format(user.id, html.escape(user.first_name))
-
+    nick = sql.get_user_nick(user.id)
+    
     if user.last_name:
         text += "\nLast Name: {}".format(html.escape(user.last_name))
+    
+    if nick:
+        text += "\nNickname: {}".format(html.escape(nick))
 
     if user.username:
         text += "\nUsername: @{}".format(html.escape(user.username))
@@ -397,11 +553,18 @@ def info(bot: Bot, update: Update, args: List[str]):
     text += "\nPermanent user link: {}".format(mention_html(user.id, "link"))
 
     if user.id == OWNER_ID:
-        text += "\n\nThis person is my owner - I would never do anything against them!"
+        text += "\n\nThis person is my creator! They have total power over me."
+
     else:
         if user.id in SUDO_USERS:
             text += "\nThis person is one of my sudo users! " \
-                    "Nearly as powerful as my owner - so watch it."
+                    "Nearly as powerful as my creator - so watch it."
+
+        if user.id in iSUDO_USERS:
+            text += "\nThe Chronics-Nothing but a g Thang " \
+                    "\nIllmatic-N.Y State of Mind."
+
+        
         else:
             if user.id in SUPPORT_USERS:
                 text += "\nThis person is one of my support users! " \
@@ -409,7 +572,7 @@ def info(bot: Bot, update: Update, args: List[str]):
 
             if user.id in SUPER_ADMINS:
                 text += "\nThis person is one of my super admin users! " \
-                        "Not quite a sudo user, but can help maintain groups."
+                        "Not quite a sudo user, but can help ban spammers off the chat."
 
             if user.id in WHITELIST_USERS:
                 text += "\nThis person has been whitelisted! " \
@@ -424,11 +587,13 @@ def info(bot: Bot, update: Update, args: List[str]):
 
 
 @run_async
-def get_time(bot: Bot, update: Update, args: List[str]):
+def get_time(update: Update, context: CallbackContext):
+    args = update.effective_message.text.split(" ")
+    args = args.remove(args[0])
     location = " ".join(args)
-    if location.lower() == bot.first_name.lower():
+    if location.lower() == context.bot.first_name.lower():
         update.effective_message.reply_text("Its always banhammer time for me!")
-        bot.send_sticker(update.effective_chat.id, BAN_STICKER)
+        context.bot.send_sticker(update.effective_chat.id, BAN_STICKER)
         return
 
     res = requests.get(GMAPS_LOC, params=dict(address=location))
@@ -464,9 +629,67 @@ def get_time(bot: Bot, update: Update, args: List[str]):
                 time_there = datetime.fromtimestamp(timenow + timestamp + offset).strftime("%I:%M:%S %p on %A %d %B")
                 update.message.reply_text("It's {} in {}".format(time_there, location))
 
+@run_async
+def msg_save(update: Update, context: CallbackContext):
+    msg = update.effective_message  # type: Optional[Message]
+    user = update.effective_user  # type: Optional[User]
+    success_pm = msg.reply_to_message.forward(user.id)
+    saved = msg.reply_text("Successfully saved message!")
+    msg.delete()
+    try:
+       time.sleep(3)
+       saved.delete()
+    
+    except TelegramError as e:
+        if e.message == "Peer_id_invalid":
+               msg.reply_text("Contact me in PM first.", reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(
+                   text="Start", url=f"t.me/{context.bot.username}")]]))
+        return
+    
+    if success_pm:
+       saved
+    
+    else:
+       msg.reply_text("Failed to save message.")
 
 @run_async
-def echo(bot: Bot, update: Update):
+def set_nick(update: Update, context: CallbackContext):
+    message = update.effective_message  # type: Optional[Message]
+    user_id = message.from_user.id
+    text = message.text
+    nick_n = text.split(None, 1)  # use python's maxsplit to only remove the cmd, hence keeping newlines.
+    if len(nick_n) == 2:
+        if len(nick_n[1]) < MAX_MESSAGE_LENGTH // 4:
+            sql.set_user_nick(user_id, nick_n[1])
+            message.reply_text("Updated your nickname!")
+        else:
+            message.reply_text(
+                "Your nickname needs to be under {} characters! You have {}.".format(MAX_MESSAGE_LENGTH // 4, len(nick_n[1])))
+
+@run_async
+def get_nick(update: Update, context: CallbackContext):
+    message = update.effective_message  # type: Optional[Message]
+    args = message.text.split(" ")
+    user_id = extract_user(message, args)
+
+    if user_id:
+        user = context.bot.get_chat(user_id)
+    else:
+        user = message.from_user
+
+    nick_txt = sql.get_user_nick(user.id)
+
+    if nick_txt:
+        update.effective_message.reply_text("*{}*'s nickname:\n{}".format(user.first_name, escape_markdown(nick_txt)),
+                                            parse_mode=ParseMode.MARKDOWN)
+    elif message.reply_to_message:
+        username = message.reply_to_message.from_user.first_name
+        update.effective_message.reply_text(username + " hasn't set nickname yet!")
+    else:
+        update.effective_message.reply_text("You haven't set a nickname for yourself!")
+
+@run_async
+def echo(update: Update, context: CallbackContext):
     args = update.effective_message.text.split(None, 1)
     message = update.effective_message
     if message.reply_to_message:
@@ -476,7 +699,7 @@ def echo(bot: Bot, update: Update):
     message.delete()
 
 
-def ping(bot: Bot, update: Update):
+def ping(update: Update, context: CallbackContext):
     start_time = time.time()
     requests.get('https://api.telegram.org')
     end_time = time.time()
@@ -484,7 +707,7 @@ def ping(bot: Bot, update: Update):
     update.effective_message.reply_text(" Ping speed was : {}ms".format(ping_time))
     
 @run_async
-def gdpr(bot: Bot, update: Update):
+def gdpr(update: Update, context: CallbackContext):
     update.effective_message.reply_text("Deleting identifiable data...")
     for mod in GDPR:
         mod.__gdpr__(update.effective_user.id)
@@ -525,7 +748,7 @@ Keep in mind that your message <b>MUST</b> contain some text other than just a b
 
 
 @run_async
-def markdown_help(bot: Bot, update: Update):
+def markdown_help(update: Update, context: CallbackContext):
     update.effective_message.reply_text(MARKDOWN_HELP, parse_mode=ParseMode.HTML)
     update.effective_message.reply_text("Try forwarding the following message to me, and you'll see!")
     update.effective_message.reply_text("/save test This is a markdown test. _italics_, *bold*, `code`, "
@@ -534,7 +757,7 @@ def markdown_help(bot: Bot, update: Update):
 
 
 @run_async
-def stats(bot: Bot, update: Update):
+def stats(update: Update, context: CallbackContext):
     update.effective_message.reply_text("Current stats:\n" + "\n".join([mod.__stats__() for mod in STATS]))
 
 
@@ -544,40 +767,55 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 
  - /id: get the current group id. If used by replying to a message, gets that user's id.
  - /runs: reply a random string from an array of replies.
+ - /rnum: generate random numbers from 0-100.
+ - /first: scrolls to first message of chat.
+ - /s: saves the message you reply to your chat with the bot.
  - /slap: slap a user, or get slapped if not a reply.
- - /time <place>: gives the local time at the given place.
  - /hug: hug a user, or get hugged if not a reply.
  - /punch: punch a user, or get punched if not a reply.
  - /info: get information about a user.
+ - /setnick <text>: will set your nickname.
+ - /nick: will get your or another user's nickname.
  - /gdpr: deletes your information from the bot's database. Private chats only.
-
+ - Hi {}: responds to user (to disable greet `/disable botgreet`; to enable greet `/enable botgreet`)
  - /markdownhelp: quick summary of how markdown works in telegram - can only be called in private chats.
-"""
-
+""".format(dispatcher.bot.first_name)
 __mod_name__ = "Misc"
 
-ID_HANDLER = DisableAbleCommandHandler("id", get_id, pass_args=True)
-IP_HANDLER = CommandHandler("ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
+ID_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "id", get_id)
+IP_HANDLER = CommandHandler(CMD_PREFIX, "ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 
-TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
+# TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
 
-RUNS_HANDLER = DisableAbleCommandHandler("runs", runs)
-SLAP_HANDLER = DisableAbleCommandHandler("slap", slap, pass_args=True)
-PUNCH_HANDLER = DisableAbleCommandHandler("punch", punch, pass_args=True)
-HUG_HANDLER = DisableAbleCommandHandler("hug", hug, pass_args=True)
-INFO_HANDLER = DisableAbleCommandHandler("info", info, pass_args=True)
-PING_HANDLER = DisableAbleCommandHandler("ping", ping)
-ECHO_HANDLER = CommandHandler("echo", echo, filters=Filters.user(OWNER_ID))
-MD_HELP_HANDLER = CommandHandler("markdownhelp", markdown_help, filters=Filters.private)
+RUNS_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "runs", runs)
+FIRST_MESSAGE_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["first_message", "first"], firstmsg)
+S_HANDLER = CommandHandler(CMD_PREFIX, "s", msg_save, filters=Filters.group)
+RNUM_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "rnum", rnum)
+#TIME_HANDLER = CommandHandler("time", get_time)
+SLAP_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "slap", slap)
+PUNCH_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "punch", punch)
+HUG_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "hug", hug)
+INFO_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"info", info)
+PING_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "ping", ping)
+GREETINGS_REGEX_HANDLER = DisableAbleRegexHandler("(?i)hi {}".format(dispatcher.bot.first_name),
+                                                                     greet, friendly="botgreet")
+ECHO_HANDLER = CommandHandler(CMD_PREFIX, "echo", echo, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+MD_HELP_HANDLER = CommandHandler(CMD_PREFIX, "markdownhelp", markdown_help, filters=Filters.private)
+SET_NICK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "setnick", set_nick)
+GET_NICK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "nick", get_nick)
 
-STATS_HANDLER = CommandHandler("stats", stats, filters=CustomFilters.sudo_filter)
-GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
+STATS_HANDLER = CommandHandler(CMD_PREFIX, "stats", stats, filters=CustomFilters.sudo_filter)
+#GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 
 dispatcher.add_handler(ID_HANDLER)
 dispatcher.add_handler(PING_HANDLER)
 dispatcher.add_handler(IP_HANDLER)
-dispatcher.add_handler(TIME_HANDLER)
+# dispatcher.add_handler(TIME_HANDLER)
+dispatcher.add_handler(GREETINGS_REGEX_HANDLER)
 dispatcher.add_handler(RUNS_HANDLER)
+dispatcher.add_handler(FIRST_MESSAGE_HANDLER)
+dispatcher.add_handler(S_HANDLER)
+dispatcher.add_handler(RNUM_HANDLER)
 dispatcher.add_handler(SLAP_HANDLER)
 dispatcher.add_handler(PUNCH_HANDLER)
 dispatcher.add_handler(HUG_HANDLER)
@@ -585,4 +823,6 @@ dispatcher.add_handler(INFO_HANDLER)
 dispatcher.add_handler(ECHO_HANDLER)
 dispatcher.add_handler(MD_HELP_HANDLER)
 dispatcher.add_handler(STATS_HANDLER)
-dispatcher.add_handler(GDPR_HANDLER)
+dispatcher.add_handler(SET_NICK_HANDLER)
+dispatcher.add_handler(GET_NICK_HANDLER)
+# dispatcher.add_handler(GDPR_HANDLER)

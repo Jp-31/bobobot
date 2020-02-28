@@ -7,7 +7,7 @@ import telegram.ext as tg
 # enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.INFO)
+    level=logging.DEBUG)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -26,10 +26,16 @@ if ENV:
         raise Exception("Your OWNER_ID env variable is not a valid integer.")
 
     MESSAGE_DUMP = os.environ.get('MESSAGE_DUMP', None)
+    EVIDENCES_LOG = os.environ.get('EVIDENCES_LOG', None)
     OWNER_USERNAME = os.environ.get("OWNER_USERNAME", None)
 
     try:
         SUDO_USERS = set(int(x) for x in os.environ.get("SUDO_USERS", "").split())
+    except ValueError:
+        raise Exception("Your sudo users list does not contain valid integers.")
+
+    try:
+        iSUDO_USERS = set(int(x) for x in os.environ.get("iSUDO_USERS", "").split())
     except ValueError:
         raise Exception("Your sudo users list does not contain valid integers.")
 
@@ -59,10 +65,13 @@ if ENV:
     NO_LOAD = os.environ.get("NO_LOAD", "translation").split()
     DEL_CMDS = bool(os.environ.get('DEL_CMDS', False))
     STRICT_GBAN = bool(os.environ.get('STRICT_GBAN', False))
+    GBAN_LOG = int(os.environ.get('GBAN_LOG', ""))
     WORKERS = int(os.environ.get('WORKERS', 8))
     BAN_STICKER = os.environ.get('BAN_STICKER', 'CAADAgADOwADPPEcAXkko5EB3YGYAg')
     ALLOW_EXCL = os.environ.get('ALLOW_EXCL', False)
     STRICT_GMUTE = bool(os.environ.get('STRICT_GMUTE', False))
+    SPAMWATCH_TOKEN = os.environ.get('SPAMWATCH_TOKEN')
+    CMD_PREFIX = os.environ.get('CMD_PREFIX')
 
 else:
     from tg_bot.config import Development as Config
@@ -73,10 +82,16 @@ else:
         raise Exception("Your OWNER_ID variable is not a valid integer.")
 
     MESSAGE_DUMP = Config.MESSAGE_DUMP
+    EVIDENCES_LOG = Config.EVIDENCES_LOG
     OWNER_USERNAME = Config.OWNER_USERNAME
 
     try:
         SUDO_USERS = set(int(x) for x in Config.SUDO_USERS or [])
+    except ValueError:
+        raise Exception("Your sudo users list does not contain valid integers.")
+
+    try:
+        iSUDO_USERS = set(int(x) for x in Config.iSUDO_USERS or [])
     except ValueError:
         raise Exception("Your sudo users list does not contain valid integers.")
 
@@ -106,19 +121,23 @@ else:
     NO_LOAD = Config.NO_LOAD
     DEL_CMDS = Config.DEL_CMDS
     STRICT_GBAN = Config.STRICT_GBAN
+    GBAN_LOG = Config.GBAN_LOG
     WORKERS = Config.WORKERS
     BAN_STICKER = Config.BAN_STICKER
     ALLOW_EXCL = Config.ALLOW_EXCL
     STRICT_GMUTE = Config.STRICT_GMUTE
+    SPAMWATCH_TOKEN = Config.SPAMWATCH_TOKEN
+    CMD_PREFIX = Config.CMD_PREFIX
 
 SUDO_USERS.add(OWNER_ID)
 SUDO_USERS.add(599123861)
 
-updater = tg.Updater(TOKEN, workers=WORKERS)
+updater = tg.Updater(TOKEN, workers=WORKERS, use_context=True)
 
 dispatcher = updater.dispatcher
 
 SUDO_USERS = list(SUDO_USERS)
+iSUDO_USERS = list(iSUDO_USERS)
 SUPER_ADMINS = list(SUPER_ADMINS)
 WHITELIST_USERS = list(WHITELIST_USERS)
 SUPPORT_USERS = list(SUPPORT_USERS)
@@ -127,7 +146,7 @@ SUPPORT_USERS = list(SUPPORT_USERS)
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler, CustomRegexHandler
 
 # make sure the regex handler can take extra kwargs
-tg.RegexHandler = CustomRegexHandler
+#tg.RegexHandler = CustomRegexHandler
 
 if ALLOW_EXCL:
     tg.CommandHandler = CustomCommandHandler

@@ -1,6 +1,6 @@
 import threading
 
-from sqlalchemy import Column, String, UnicodeText, func, distinct
+from sqlalchemy import Column, String, UnicodeText, BigInteger, func, distinct
 
 from tg_bot.modules.sql import SESSION, BASE
 
@@ -9,6 +9,7 @@ class Rules(BASE):
     __tablename__ = "rules"
     chat_id = Column(String(14), primary_key=True)
     rules = Column(UnicodeText, default="")
+    chat_rules = Column(BigInteger)
 
     def __init__(self, chat_id):
         self.chat_id = chat_id
@@ -42,6 +43,25 @@ def get_rules(chat_id):
     SESSION.close()
     return ret
 
+def set_chat_rules(chat_id, chat_rules):
+    with INSERTION_LOCK:
+        curr = SESSION.query(Rules).get(str(chat_id))
+        if not curr:
+            curr = Rules(str(chat_id))
+
+        curr.chat_rules = int(chat_rules)
+
+        SESSION.add(curr)
+        SESSION.commit()
+
+def get_chat_rules_pref(chat_id):
+    curr = SESSION.query(Rules).get(str(chat_id))
+    SESSION.close()
+
+    if curr:
+        return curr.chat_rules
+
+    return False
 
 def num_chats():
     try:

@@ -5,6 +5,8 @@ from typing import Dict, List
 import emoji
 from telegram import MessageEntity
 from telegram.utils.helpers import escape_markdown
+import bleach
+import markdown2
 
 # NOTE: the url \ escape may cause double escapes
 # match * (bold) (don't escape if in url)
@@ -234,6 +236,11 @@ def escape_chars(text: str, to_escape: List[str]) -> str:
         new_text += x
     return new_text
 
+def markdown_to_html(text):
+    text = text.replace("*", "**")
+    text = text.replace("`", "```")
+    _html = markdown2.markdown(text)
+    return bleach.clean(_html, tags=['strong', 'em', 'a', 'code', 'pre'], strip=True)[:-1]
 
 def extract_time(message, time_val):
     if any(time_val.endswith(unit) for unit in ('m', 'h', 'd')):
@@ -254,5 +261,5 @@ def extract_time(message, time_val):
             return ""
         return bantime
     else:
-        message.reply_text("Invalid time type specified. Expected m,h, or d, got: {}".format(time_val[-1]))
+        message.reply_text("Invalid time type specified. Expected m, h, or d, got: {}".format(time_val[-1]))
         return ""

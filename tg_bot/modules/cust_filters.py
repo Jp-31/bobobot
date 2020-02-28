@@ -1,18 +1,19 @@
-import re
+import html, re
 from typing import Optional
 
 import telegram
 from telegram import ParseMode, InlineKeyboardMarkup, Message, Chat
 from telegram import Update, Bot
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, MessageHandler, DispatcherHandlerStop, run_async
-from telegram.utils.helpers import escape_markdown, mention_markdown
+from telegram.ext import CallbackContext, CommandHandler, DispatcherHandlerStop, Filters, MessageHandler, run_async, CallbackContext
+from telegram.utils.helpers import escape_markdown, mention_markdown, mention_html
 
-from tg_bot import dispatcher, LOGGER
+from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
+from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.helper_funcs.misc import build_keyboard
 from tg_bot.modules.helper_funcs.string_handling import split_quotes, button_markdown_parser, \
      escape_invalid_curly_brackets
@@ -25,7 +26,7 @@ VALID_FORMATTERS = ['first', 'last', 'fullname', 'username', 'id', 'count', 'cha
 
 
 @run_async
-def list_handlers(bot: Bot, update: Update):
+def list_handlers(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     all_handlers = sql.get_chat_triggers(chat.id)
     chat_name = chat.title or chat.first or chat.username
@@ -48,8 +49,10 @@ def list_handlers(bot: Bot, update: Update):
 
 # NOT ASYNC BECAUSE DISPATCHER HANDLER RAISED
 @user_admin
-def filters(bot: Bot, update: Update):
+@loggable
+def filters(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user
     msg = update.effective_message  # type: Optional[Message]
     args = msg.text.split(None, 1)  # use python's maxsplit to separate Cmd, keyword, and reply_text
 
@@ -77,7 +80,7 @@ def filters(bot: Bot, update: Update):
         content = content.strip()
         if not content:
             msg.reply_text("There is no note message - You can't JUST have buttons, you need a message to go with it!")
-            return
+            return ""
 
     elif msg.reply_to_message and msg.reply_to_message.sticker:
         content = msg.reply_to_message.sticker.file_id
@@ -88,6 +91,10 @@ def filters(bot: Bot, update: Update):
         is_document = True
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
+        offset = len(msg.reply_to_message.caption)
+        ignore_underscore_case, buttons = button_markdown_parser(msg.reply_to_message.caption, 
+                                                                 entities=msg.reply_to_message.parse_entities(), 
+                                                                 offset=offset)
         content = msg.reply_to_message.photo[-1].file_id  # last elem = best quality
         is_image = True
 
@@ -105,7 +112,7 @@ def filters(bot: Bot, update: Update):
 
     else:
         msg.reply_text("You didn't specify what to reply with!")
-        return
+        return ""
 
     # Add the filter
     # Note: perhaps handlers can be removed somehow using sql.get_chat_filters
@@ -115,15 +122,23 @@ def filters(bot: Bot, update: Update):
 
     sql.add_filter(chat.id, keyword, content, is_sticker, is_document, is_image, is_audio, is_voice, is_video,
                    buttons)
-                   
+    log = "<b>{}:</b>" \
+          "\n#FILTERS" \
+          "\n<b>• Action:</b> added" \
+          "\n<b>• Admin:</b> {}" \
+          "\n<b>• Trigger:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name), keyword)
+                         
     update.effective_message.reply_text("Filter has been saved for '`{}`'.".format(keyword), parse_mode=ParseMode.MARKDOWN)
+    return log
     raise DispatcherHandlerStop
 
 
 # NOT ASYNC BECAUSE DISPATCHER HANDLER RAISED
 @user_admin
-def stop_filter(bot: Bot, update: Update):
+@loggable
+def stop_filter(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user
     args = update.effective_message.text.split(None, 1)
 
     if len(args) < 2:
@@ -139,30 +154,48 @@ def stop_filter(bot: Bot, update: Update):
         if keyword == args[1]:
             sql.remove_filter(chat.id, args[1])
             update.effective_message.reply_text("Removed '`{}`', I will no longer reply to that!".format(keyword), parse_mode=ParseMode.MARKDOWN)
+            
+            log = "<b>{}:</b>" \
+                  "\n#FILTERS" \
+                  "\n<b>• Action:</b> cleared" \
+                  "\n<b>• Admin:</b> {}" \
+                  "\n<b>• Trigger:</b> {}".format(html.escape(chat.title), mention_html(user.id, 
+                                                  user.first_name), keyword)
+            return log
             raise DispatcherHandlerStop
 
     update.effective_message.reply_text("That's not a current filter - run /filters for all active filters.")
 
 
 @run_async
-def reply_filter(bot: Bot, update: Update):
+def reply_filter(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     message = update.effective_message  # type: Optional[Message]
     to_match = extract_text(message)
     if not to_match:
         return
 
+    if message.reply_to_message:
+        message = message.reply_to_message
+    str_filter = ""
+
     chat_filters = sql.get_chat_triggers(chat.id)
     for keyword in chat_filters:
         pattern = r"( |^|[^\w])" + re.escape(keyword) + r"( |$|[^\w])"
         if re.search(pattern, to_match, flags=re.IGNORECASE):
             filt = sql.get_filter(chat.id, keyword)
+            buttons = sql.get_buttons(chat.id, filt.keyword)
             if filt.is_sticker:
                 message.reply_sticker(filt.reply)
             elif filt.is_document:
                 message.reply_document(filt.reply)
             elif filt.is_image:
-                message.reply_photo(filt.reply)
+                if len(buttons) > 0:
+                    keyb = build_keyboard(buttons)
+                    keyboard = InlineKeyboardMarkup(keyb)
+                    message.reply_photo(filt.reply, reply_markup=keyboard)
+                else:
+                    message.reply_photo(filt.reply)
             elif filt.is_audio:
                 message.reply_audio(filt.reply)
             elif filt.is_voice:
@@ -170,9 +203,12 @@ def reply_filter(bot: Bot, update: Update):
             elif filt.is_video:
                 message.reply_video(filt.reply)
             elif filt.has_markdown:
-                buttons = sql.get_buttons(chat.id, filt.keyword)
                 keyb = build_keyboard(buttons)
                 keyboard = InlineKeyboardMarkup(keyb)
+
+                should_preview_disabled = True
+                if "telegra.ph" in filt.reply or "youtu.be" in filt.reply:
+                    should_preview_disabled = False
 
                 try:
                     user = update.effective_user  # type: Optional[User]
@@ -194,8 +230,8 @@ def reply_filter(bot: Bot, update: Update):
                                             last=escape_markdown(user.last_name or first_name),
                                             fullname=escape_markdown(fullname), username=username, mention=mention,
                                             count=count, chatname=escape_markdown(chat.title), id=user.id)
-                    message.reply_text(filt.reply, parse_mode=ParseMode.MARKDOWN,
-                                       disable_web_page_preview=True,
+                    message.reply_text(str_filter + "\n" + filt.reply, parse_mode=ParseMode.MARKDOWN,
+                                       disable_web_page_preview=should_preview_disabled,
                                        reply_markup=keyboard)
                 except BadRequest as excp:
                     if excp.message == "Unsupported url protocol":
@@ -203,7 +239,7 @@ def reply_filter(bot: Bot, update: Update):
                                            "doesn't support buttons for some protocols, such as tg://. Please try "
                                            "again, or ask @stillmav for help.")
                     elif excp.message == "Reply message not found":
-                        bot.send_message(chat.id, filt.reply, parse_mode=ParseMode.MARKDOWN,
+                        context.bot.send_message(chat.id, filt.reply, parse_mode=ParseMode.MARKDOWN,
                                          disable_web_page_preview=True,
                                          reply_markup=keyboard)
                     else:
@@ -214,7 +250,7 @@ def reply_filter(bot: Bot, update: Update):
 
             else:
                 # LEGACY - all new filters will have has_markdown set to True.
-                message.reply_text(filt.reply)
+                message.reply_text(str_filter + "\n" + filt.reply)
             break
 
 
@@ -271,10 +307,10 @@ from same line.
 
 __mod_name__ = "Filters"
 
-FILTER_HANDLER = CommandHandler("filter", filters)
-STOP_HANDLER = CommandHandler("stop", stop_filter)
-LIST_HANDLER = DisableAbleCommandHandler("filters", list_handlers, admin_ok=True)
-CUST_FILTER_HANDLER = MessageHandler(CustomFilters.has_text, reply_filter)
+FILTER_HANDLER = CommandHandler(CMD_PREFIX, "filter", filters)
+STOP_HANDLER = CommandHandler(CMD_PREFIX, "stop", stop_filter)
+LIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "filters", list_handlers, admin_ok=True)
+CUST_FILTER_HANDLER = MessageHandler(CustomFilters.has_text, reply_filter, Filters.update.edited_message)
 
 dispatcher.add_handler(FILTER_HANDLER)
 dispatcher.add_handler(STOP_HANDLER)

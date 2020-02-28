@@ -1,7 +1,7 @@
 from telegram import Message
 from telegram.ext import BaseFilter
 
-from tg_bot import SUPPORT_USERS, SUDO_USERS, SUPER_ADMINS
+from tg_bot import SUPPORT_USERS, iSUDO_USERS, SUDO_USERS, SUPER_ADMINS
 
 
 class CustomFilters(object):
@@ -16,6 +16,12 @@ class CustomFilters(object):
             return bool(message.from_user and message.from_user.id in SUDO_USERS)
 
     sudo_filter = _Sudoers()
+    
+    class _iSudoers(BaseFilter):
+        def filter(self, message: Message):
+            return bool(message.from_user and message.from_user.id in iSUDO_USERS)
+
+    isudo_filter = _iSudoers()
     
     class _SuperAdminers(BaseFilter):
         def filter(self, message: Message):

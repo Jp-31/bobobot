@@ -8,7 +8,8 @@ def __list_all_modules():
     mod_paths = glob.glob(dirname(__file__) + "/*.py")
     all_modules = [basename(f)[:-3] for f in mod_paths if isfile(f)
                    and f.endswith(".py")
-                   and not f.endswith('__init__.py')]
+                   and not f.endswith('__init__.py')
+                   ] # RTL is broken atm
 
     if LOAD or NO_LOAD:
         to_load = LOAD
@@ -32,3 +33,8 @@ def __list_all_modules():
 ALL_MODULES = sorted(__list_all_modules())
 LOGGER.info("Modules to load: %s", str(ALL_MODULES))
 __all__ = ALL_MODULES + ["ALL_MODULES"]
+
+# ["admin", "afk", "antiflood", "backups", "banhammer", "blacklist", "bot_spamwatch",
+#                "cust_filters", "disable", "getlink", "global_bans", "global_kicks", "global_mutes",
+#                "leave", "locks", "log_channel", "lyrics", "mention", "misc", "msg_deleting",
+#                "muting", "notes", "remote_cmds", "reporting", "rtl"]

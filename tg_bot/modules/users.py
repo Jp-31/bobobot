@@ -5,11 +5,11 @@ from typing import Optional
 from telegram import TelegramError, Chat, Message
 from telegram import Update, Bot
 from telegram.error import BadRequest
-from telegram.ext import MessageHandler, Filters, CommandHandler
+from telegram.ext import MessageHandler, Filters, CommandHandler, CallbackContext
 from telegram.ext.dispatcher import run_async
 
 import tg_bot.modules.sql.users_sql as sql
-from tg_bot import dispatcher, OWNER_ID, LOGGER
+from tg_bot import dispatcher, iSUDO_USERS, OWNER_ID, LOGGER, CMD_PREFIX
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 USERS_GROUP = 4
@@ -48,14 +48,14 @@ def get_user_id(username):
 
 
 @run_async
-def broadcast(bot: Bot, update: Update):
+def broadcast(update: Update, context: CallbackContext):
     to_send = update.effective_message.text.split(None, 1)
     if len(to_send) >= 2:
         chats = sql.get_all_chats() or []
         failed = 0
         for chat in chats:
             try:
-                bot.sendMessage(int(chat.chat_id), to_send[1])
+                context.bot.sendMessage(int(chat.chat_id), to_send[1])
                 sleep(0.1)
             except TelegramError:
                 failed += 1
@@ -66,7 +66,7 @@ def broadcast(bot: Bot, update: Update):
 
 
 @run_async
-def log_user(bot: Bot, update: Update):
+def log_user(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message  # type: Optional[Message]
 
@@ -87,7 +87,7 @@ def log_user(bot: Bot, update: Update):
 
 
 @run_async
-def chats(bot: Bot, update: Update):
+def chats(update: Update, context: CallbackContext):
     all_chats = sql.get_all_chats() or []
     chatfile = 'List of chats.\n'
     for chat in all_chats:
@@ -122,9 +122,9 @@ __help__ = ""  # no help string
 
 __mod_name__ = "Users"
 
-BROADCAST_HANDLER = CommandHandler("broadcast", broadcast, filters=Filters.user(OWNER_ID))
+BROADCAST_HANDLER = CommandHandler(CMD_PREFIX, "broadcast", broadcast, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
-CHATLIST_HANDLER = CommandHandler("chatlist", chats, filters=CustomFilters.sudo_filter)
+CHATLIST_HANDLER = CommandHandler(CMD_PREFIX, "chatlist", chats, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)

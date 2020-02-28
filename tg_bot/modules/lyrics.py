@@ -1,20 +1,20 @@
 from PyLyrics import *
 from telegram import Update, Bot
-from telegram.ext import run_async
+from telegram.ext import CallbackContext, CommandHandler, run_async
 from typing import Optional, List
 
 from tg_bot.modules.disable import DisableAbleCommandHandler
-from tg_bot import dispatcher
+from tg_bot import dispatcher, CMD_PREFIX
 
 from requests import get
 
 LYRICSINFO = "\n[Full Lyrics](http://lyrics.wikia.com/wiki/%s:%s)"
 
 @run_async
-def lyrics(bot: Bot, update: Update, args: List[str]):
+def lyrics(update: Update, context: CallbackContext):
     message = update.effective_message
     text = message.text[len('/lyrics '):]
-    song = " ".join(args).split("- ")
+    song = " ".join(context.args).split("- ")
     reply_text = f'Looks up for lyrics'
     
     if len(song) == 2:
@@ -53,6 +53,6 @@ An example of using lyrics:
 
 __mod_name__ = "Lyrics"
 
-LYRICS_HANDLER = DisableAbleCommandHandler("lyrics", lyrics, pass_args=True)
+LYRICS_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "lyrics", lyrics)
 
 dispatcher.add_handler(LYRICS_HANDLER)

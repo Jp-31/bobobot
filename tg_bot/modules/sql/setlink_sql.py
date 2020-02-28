@@ -1,14 +1,16 @@
 import threading
 
-from sqlalchemy import Column, String, UnicodeText, func, distinct
+from sqlalchemy import Column, String, UnicodeText, Integer, func, distinct
 
 from tg_bot.modules.sql import SESSION, BASE
 
+DEF_COUNT = 0
 
 class Links(BASE):
     __tablename__ = "chat_links"
     chat_id = Column(String(14), primary_key=True)
     chat_links = Column(UnicodeText, default="")
+    link_mode = Column(Integer, default=DEF_COUNT)
 
     def __init__(self, chat_id):
         self.chat_id = chat_id
@@ -21,6 +23,7 @@ Links.__table__.create(checkfirst=True)
 
 INSERTION_LOCK = threading.RLock()
 
+CHAT_LINK = {}
 
 def set_link(chat_id, links_text):
     with INSERTION_LOCK:
@@ -32,6 +35,33 @@ def set_link(chat_id, links_text):
         SESSION.add(chat_links)
         SESSION.commit()
 
+def set_link_mode(chat_id, link_opt):
+    with INSERTION_LOCK:
+        link_mode = SESSION.query(Links).get(str(chat_id))
+        if not link_mode:
+            link_mode = Links(str(chat_id))
+        link_mode.link_mode = link_opt
+
+        SESSION.add(link_mode)
+        SESSION.commit()
+                
+def rm_link(chat_id, links_text):
+    with INSERTION_LOCK:
+        chat_links = SESSION.query(Links).get(str(chat_id))
+        if chat_id in CHAT_LINK:
+           del links_text
+
+        SESSION.delete(chat_links)
+        SESSION.commit()
+
+def get_link_mode(chat_id):
+    link_mode = SESSION.query(Links).get(str(chat_id))
+    ret = ""
+    if link_mode:
+        ret = link_mode.link_mode
+
+    SESSION.close()
+    return ret
 
 def get_link(chat_id):
     chat_links = SESSION.query(Links).get(str(chat_id))

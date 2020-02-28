@@ -8,18 +8,18 @@ FILENAME = __name__.rsplit(".", 1)[-1]
 if is_module_loaded(FILENAME):
     from telegram import Bot, Update, ParseMode, Message, Chat
     from telegram.error import BadRequest, Unauthorized
-    from telegram.ext import CommandHandler, run_async
+    from telegram.ext import CommandHandler, run_async, CallbackContext
     from telegram.utils.helpers import escape_markdown
 
-    from tg_bot import dispatcher, LOGGER
+    from tg_bot import dispatcher, LOGGER, CMD_PREFIX
     from tg_bot.modules.helper_funcs.chat_status import user_admin
     from tg_bot.modules.sql import log_channel_sql as sql
 
 
     def loggable(func):
         @wraps(func)
-        def log_action(bot: Bot, update: Update, *args, **kwargs):
-            result = func(bot, update, *args, **kwargs)
+        def log_action(update: Update, context: CallbackContext, *args, **kwargs):
+            result = func(update, context, *args, **kwargs)
             chat = update.effective_chat  # type: Optional[Chat]
             message = update.effective_message  # type: Optional[Message]
             if result:
@@ -29,7 +29,7 @@ if is_module_loaded(FILENAME):
                                                                                            message.message_id)
                 log_chat = sql.get_chat_log_channel(chat.id)
                 if log_chat:
-                    send_log(bot, log_chat, chat.id, result)
+                    send_log(context, log_chat, chat.id, result)
             elif result == "":
                 pass
             else:
@@ -40,30 +40,30 @@ if is_module_loaded(FILENAME):
         return log_action
 
 
-    def send_log(bot: Bot, log_chat_id: str, orig_chat_id: str, result: str):
+    def send_log(context, log_chat_id: str, orig_chat_id: str, result: str):
         try:
-            bot.send_message(log_chat_id, result, parse_mode=ParseMode.HTML)
+            context.bot.send_message(log_chat_id, result, parse_mode=ParseMode.HTML)
         except BadRequest as excp:
             if excp.message == "Chat not found":
-                bot.send_message(orig_chat_id, "This log channel has been deleted - unsetting.")
+                context.bot.send_message(orig_chat_id, "This log channel has been deleted - unsetting.")
                 sql.stop_chat_logging(orig_chat_id)
             else:
                 LOGGER.warning(excp.message)
                 LOGGER.warning(result)
                 LOGGER.exception("Could not parse")
 
-                bot.send_message(log_chat_id, result + "\n\nFormatting has been disabled due to an unexpected error.")
+                context.bot.send_message(log_chat_id, result + "\n\nFormatting has been disabled due to an unexpected error.")
 
 
     @run_async
     @user_admin
-    def logging(bot: Bot, update: Update):
+    def logging(update: Update, context: CallbackContext):
         message = update.effective_message  # type: Optional[Message]
         chat = update.effective_chat  # type: Optional[Chat]
 
         log_channel = sql.get_chat_log_channel(chat.id)
         if log_channel:
-            log_channel_info = bot.get_chat(log_channel)
+            log_channel_info = context.bot.get_chat(log_channel)
             message.reply_text(
                 "This group has all it's logs sent to: {} (`{}`)".format(escape_markdown(log_channel_info.title),
                                                                          log_channel),
@@ -75,7 +75,7 @@ if is_module_loaded(FILENAME):
 
     @run_async
     @user_admin
-    def setlog(bot: Bot, update: Update):
+    def setlog(update: Update, context: CallbackContext):
         message = update.effective_message  # type: Optional[Message]
         chat = update.effective_chat  # type: Optional[Chat]
         if chat.type == chat.CHANNEL:
@@ -92,16 +92,16 @@ if is_module_loaded(FILENAME):
                     LOGGER.exception("Error deleting message in log channel. Should work anyway though.")
 
             try:
-                bot.send_message(message.forward_from_chat.id,
+                context.bot.send_message(message.forward_from_chat.id,
                                  "This channel has been set as the log channel for {}.".format(
                                      chat.title or chat.first_name))
             except Unauthorized as excp:
                 if excp.message == "Forbidden: bot is not a member of the channel chat":
-                    bot.send_message(chat.id, "Successfully set log channel!")
+                    context.bot.send_message(chat.id, "Successfully set log channel!")
                 else:
                     LOGGER.exception("ERROR in setting the log channel.")
 
-            bot.send_message(chat.id, "Successfully set log channel!")
+            context.bot.send_message(chat.id, "Successfully set log channel!")
 
         else:
             message.reply_text("The steps to set a log channel are:\n"
@@ -112,13 +112,13 @@ if is_module_loaded(FILENAME):
 
     @run_async
     @user_admin
-    def unsetlog(bot: Bot, update: Update):
+    def unsetlog(update: Update, context: CallbackContext):
         message = update.effective_message  # type: Optional[Message]
         chat = update.effective_chat  # type: Optional[Chat]
 
         log_channel = sql.stop_chat_logging(chat.id)
         if log_channel:
-            bot.send_message(log_channel, "Channel has been unlinked from {}".format(chat.title))
+            context.bot.send_message(log_channel, "Channel has been unlinked from {}".format(chat.title))
             message.reply_text("Log channel has been un-set.")
 
         else:
@@ -143,10 +143,10 @@ if is_module_loaded(FILENAME):
 
 
     __help__ = """
-Recent actions are nice, but they don't help you log every action taken by the bot. This is why you need log channels!
+Recent actions are nice, but they don't help you log every action taken by {}. This is why you need log channels!
 
 Log channels can help you keep track of exactly what the other admins are doing. \
-Bans, Mutes, warns, notes - everything can be moderated.
+bans, mutes, warns, notes - everything can be moderated.
 
 *Admin only:*
 - /logchannel: get log channel info
@@ -158,13 +158,13 @@ Setting the log channel is done by:
 - Send /setlog to your channel.
 - Forward the /setlog command to the group you wish to be logged.
 - Congratulations! All is set!
-"""
+""".format(dispatcher.bot.first_name)
 
     __mod_name__ = "Log Channels"
 
-    LOG_HANDLER = CommandHandler("logchannel", logging)
-    SET_LOG_HANDLER = CommandHandler("setlog", setlog)
-    UNSET_LOG_HANDLER = CommandHandler("unsetlog", unsetlog)
+    LOG_HANDLER = CommandHandler(CMD_PREFIX, "logchannel", logging)
+    SET_LOG_HANDLER = CommandHandler(CMD_PREFIX, "setlog", setlog)
+    UNSET_LOG_HANDLER = CommandHandler(CMD_PREFIX, "unsetlog", unsetlog)
 
     dispatcher.add_handler(LOG_HANDLER)
     dispatcher.add_handler(SET_LOG_HANDLER)
