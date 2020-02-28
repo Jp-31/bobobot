@@ -11,6 +11,7 @@ from telegram.ext.dispatcher import run_async
 import tg_bot.modules.sql.users_sql as sql
 from tg_bot import dispatcher, iSUDO_USERS, OWNER_ID, LOGGER, CMD_PREFIX
 from tg_bot.modules.helper_funcs.filters import CustomFilters
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 USERS_GROUP = 4
 
@@ -122,9 +123,9 @@ __help__ = ""  # no help string
 
 __mod_name__ = "Users"
 
-BROADCAST_HANDLER = CommandHandler(CMD_PREFIX, "broadcast", broadcast, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+BROADCAST_HANDLER = CustomCommandHandler(CMD_PREFIX, "broadcast", broadcast, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 USER_HANDLER = MessageHandler(Filters.all & Filters.group, log_user)
-CHATLIST_HANDLER = CommandHandler(CMD_PREFIX, "chatlist", chats, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+CHATLIST_HANDLER = CustomCommandHandler(CMD_PREFIX, "chatlist", chats, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 
 dispatcher.add_handler(USER_HANDLER, USERS_GROUP)
 dispatcher.add_handler(BROADCAST_HANDLER)

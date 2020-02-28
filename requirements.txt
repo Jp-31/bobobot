@@ -2,7 +2,10 @@ future
 emoji
 requests
 sqlalchemy
-python-telegram-bot
+python-telegram-bot==12.4.2
 psycopg2-binary
 feedparser
 PyLyrics
+tldextract
+Pillow>=4.2.0
+alphabet_detector

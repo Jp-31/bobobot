@@ -1,5 +1,5 @@
 from html import escape
-import time
+import time, spamwatch
 import re
 from typing import Optional, List
 
@@ -10,8 +10,9 @@ from telegram.ext import MessageHandler, Filters, CommandHandler, run_async, Cal
 from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.welcome_sql as sql
-from tg_bot.modules.sql.global_bans_sql import get_gbanned_user, get_gban_alert
-from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX
+from tg_bot.modules.sql.global_bans_sql import get_gbanned_user
+from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX, SPAMWATCH_TOKEN
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_welcome_type
@@ -20,6 +21,7 @@ from tg_bot.modules.helper_funcs.string_handling import markdown_parser, \
 from tg_bot.modules.log_channel import loggable
 
 VALID_WELCOME_FORMATTERS = ['first', 'last', 'fullname', 'username', 'id', 'count', 'chatname', 'mention']
+client = spamwatch.Client(SPAMWATCH_TOKEN)
 
 ENUM_FUNC_MAP = {
     sql.Types.TEXT.value: dispatcher.bot.send_message,
@@ -109,32 +111,30 @@ def new_member(update: Update, context: CallbackContext):
     user_id = user.id
     human_checks = sql.get_human_checks(user_id, chat.id)
     gban_checks = get_gbanned_user(user_id)
-    gban_alert = get_gban_alert(chat.id)
     if should_welc:
         sent = None
         new_members = update.effective_message.new_chat_members
         for new_mem in new_members:
-            # Give the owner a special welcome                
+            spamwatch_banned = client.get_ban(new_mem.id)
+            # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
                 continue
             
+            #### BAN CHECKERS ####
+            # Ignore welc messages for gbanned users
             if gban_checks:
-                join_gban = "User {} is currently globally banned. Therefore, is recommended with removal from {} " \
-                "immediately.".format(mention_html(user.id, user.first_name or "Deleted Account"), 
-                                                            chat.title)
-                if gban_checks.reason:
-                    join_gban += "\n<b>Reason</b>: {}".format(gban_checks.reason)
-                    
-                    
-                    msg.reply_text(join_gban, parse_mode=ParseMode.HTML)
-                    update.effective_message.delete()
-                    continue
-                
+                continue
+
+            # Ignore welc messages for SpamWatch banned users
+            if spamwatch_banned:
+                continue
+            
             # Make bot greet admins
             elif new_mem.id == context.bot.id:
                 update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding me to {}" 
-                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, context.bot.first_name, chat_name))
+                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, 
+                                                                                         context.bot.first_name, chat_name))
 
             else:
                 # If welcome message is media, send with appropriate function
@@ -171,7 +171,33 @@ def new_member(update: Update, context: CallbackContext):
 
                 sent = send(update, res, keyboard,
                             sql.DEFAULT_WELCOME.format(first=first_name))  # type: Optional[Message]
+                #User exception from mutes:
+                if is_user_ban_protected(chat, new_mem.id, chat.get_member(new_mem.id)) or human_checks or gban_checks:
+                    return ""
+                #Join welcome: soft mute
+                if welc_mutes == "soft":
+                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_SOFT,
+                                                    until_date=(int(time.time() + 24 * 60 * 60)))
+                #Join welcome: strong mute
+                if welc_mutes == "strong":
+                    msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
+                                                                                                        new_mem.id),
+                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
+                        callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
+                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_STRONG)
+                
+                #Join welcome: aggressive mute
+                elif welc_mutes == "aggressive":
+                    agg = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
+                                                                                                        new_mem.id),
+                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
+                        callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
+                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
             delete_join(update, context)
+            if not human_checks:
+                time.sleep(3600)
+                agg.delete()
+                chat.unban_member(new_mem.id)
         prev_welc = sql.get_clean_pref(chat.id)
         if prev_welc:
             try:
@@ -181,46 +207,29 @@ def new_member(update: Update, context: CallbackContext):
 
             if sent:
                 sql.set_clean_welcome(chat.id, sent.message_id)
-        #Join welcome: soft mute
-        if welc_mutes == "soft":
-            context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_SOFT,
-                                              until_date=(int(time.time() + 24 * 60 * 60)))
-        #User exception from mutes:
-        if is_user_ban_protected(chat, new_mem.id, chat.get_member(new_mem.id)) or human_checks or gban_checks:
-            return ""
-                      
-        #Join welcome: strong mute
-        elif welc_mutes == "strong":
-            msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
-                                                                                                 new_mem.id),
-                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
-                 callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
-            context.bot.restrict_chat_member(chat.id, new_mem.id, 
-                                     WELCOME_PERMISSIONS_STRONG)
-                                     
-        #Join welcome: aggressive mute
-        elif welc_mutes == "aggressive":
-            agg = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
-                                                                                                  new_mem.id),
-                 reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
-                 callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
-            context.bot.restrict_chat_member(chat.id, new_mem.id, 
-                                     WELCOME_PERMISSIONS_AGGRESSIVE)
-            if not human_checks:
-               time.sleep(3600)
-               agg.delete()
-               chat.unban_member(new_mem.id)
 
 @run_async
 def left_member(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     should_goodbye, cust_goodbye, goodbye_type = sql.get_gdbye_pref(chat.id)
     cust_goodbye = markdown_to_html(cust_goodbye)
+
     if should_goodbye:
         left_mem = update.effective_message.left_chat_member
+        gban_checks = get_gbanned_user(left_mem.id)
+        spamwatch_banned = client.get_ban(left_mem.id)
         if left_mem:
             # Ignore bot being kicked
             if left_mem.id == context.bot.id:
+                return
+            
+            ### BAN CHECKERS ###
+            # Ignore gbanned users
+            if gban_checks:
+                return
+            
+            # Ignore spamwatch banned users
+            if spamwatch_banned:
                 return
 
             # Give the owner a special goodbye
@@ -730,16 +739,16 @@ __mod_name__ = "Greetings"
 
 NEW_MEM_HANDLER = MessageHandler(Filters.status_update.new_chat_members, new_member)
 LEFT_MEM_HANDLER = MessageHandler(Filters.status_update.left_chat_member, left_member)
-WELC_PREF_HANDLER = CommandHandler(CMD_PREFIX, "welcome", welcome, filters=Filters.group)
-GOODBYE_PREF_HANDLER = CommandHandler(CMD_PREFIX, "goodbye", goodbye, filters=Filters.group)
-SET_WELCOME = CommandHandler(CMD_PREFIX, "setwelcome", set_welcome, filters=Filters.group)
-SET_GOODBYE = CommandHandler(CMD_PREFIX, "setgoodbye", set_goodbye, filters=Filters.group)
-RESET_WELCOME = CommandHandler(CMD_PREFIX, "resetwelcome", reset_welcome, filters=Filters.group)
-RESET_GOODBYE = CommandHandler(CMD_PREFIX, "resetgoodbye", reset_goodbye, filters=Filters.group)
-CLEAN_WELCOME = CommandHandler(CMD_PREFIX, "cleanwelcome", clean_welcome, filters=Filters.group)
-WELCOMEMUTE_HANDLER = CommandHandler(CMD_PREFIX, "welcomemute", welcomemute, filters=Filters.group)
-DEL_JOINED = CommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
-WELCOME_HELP = CommandHandler(CMD_PREFIX, "welcomehelp", welcome_help)
+WELC_PREF_HANDLER = CustomCommandHandler(CMD_PREFIX, "welcome", welcome, filters=Filters.group)
+GOODBYE_PREF_HANDLER = CustomCommandHandler(CMD_PREFIX, "goodbye", goodbye, filters=Filters.group)
+SET_WELCOME = CustomCommandHandler(CMD_PREFIX, "setwelcome", set_welcome, filters=Filters.group)
+SET_GOODBYE = CustomCommandHandler(CMD_PREFIX, "setgoodbye", set_goodbye, filters=Filters.group)
+RESET_WELCOME = CustomCommandHandler(CMD_PREFIX, "resetwelcome", reset_welcome, filters=Filters.group)
+RESET_GOODBYE = CustomCommandHandler(CMD_PREFIX, "resetgoodbye", reset_goodbye, filters=Filters.group)
+CLEAN_WELCOME = CustomCommandHandler(CMD_PREFIX, "cleanwelcome", clean_welcome, filters=Filters.group)
+WELCOMEMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "welcomemute", welcomemute, filters=Filters.group)
+DEL_JOINED = CustomCommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
+WELCOME_HELP = CustomCommandHandler(CMD_PREFIX, "welcomehelp", welcome_help)
 BUTTON_VERIFY_HANDLER = CallbackQueryHandler(user_button, pattern=r"user_join_")
 
 dispatcher.add_handler(NEW_MEM_HANDLER)

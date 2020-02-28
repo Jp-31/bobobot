@@ -8,6 +8,7 @@ from typing import Optional, List
 import tldextract
 from tg_bot import LOGGER, dispatcher, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from telegram.utils.helpers import mention_html
 from tg_bot.modules.helper_funcs.chat_status import user_admin, user_not_admin
 from tg_bot.modules.sql import urlwhitelist_sql as sql
@@ -141,8 +142,8 @@ def get_whitelisted_urls(update: Update, context: CallbackContext):
             return
         msg.reply_text(text.format(chat_name), parse_mode=ParseMode.HTML)
 
-ADD_URL_WHITELIST_HANDLER = CommandHandler(CMD_PREFIX, "addwhitelist", add_whitelist_url, filters=Filters.group)
-RM_WHITELIST_URL_HANDLER = CommandHandler(CMD_PREFIX, ["unwhitelist", "rmwhitelist"], rm_whitelist_url, filters=Filters.group)
+ADD_URL_WHITELIST_HANDLER = CustomCommandHandler(CMD_PREFIX, "addwhitelist", add_whitelist_url, filters=Filters.group)
+RM_WHITELIST_URL_HANDLER = CustomCommandHandler(CMD_PREFIX, ["unwhitelist", "rmwhitelist"], rm_whitelist_url, filters=Filters.group)
 GET_WHITELISTED_URLS = DisableAbleCommandHandler(CMD_PREFIX, "whitelist", get_whitelisted_urls, filters=Filters.group, admin_ok=True)
 
 

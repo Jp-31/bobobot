@@ -6,6 +6,7 @@ from telegram import Update, Bot
 from telegram.ext import CommandHandler
 
 from tg_bot import dispatcher, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 # Open API key
 API_KEY = "6ae0c3a0-afdc-4532-a810-82ded0054236"
@@ -54,6 +55,6 @@ __help__ = """
 __mod_name__ = "Translator"
 
 
-TRANSLATE_HANDLER = CommandHandler(CMD_PREFIX, 't', translate)
+TRANSLATE_HANDLER = CustomCommandHandler(CMD_PREFIX, 't', translate)
 
 dispatcher.add_handler(TRANSLATE_HANDLER)

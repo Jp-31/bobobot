@@ -8,6 +8,7 @@ from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete
 from tg_bot.modules.log_channel import loggable
 
@@ -102,8 +103,8 @@ messages all together or individually.
 
 __mod_name__ = "Purges"
 
-DELETE_HANDLER = CommandHandler(CMD_PREFIX, "del", del_message, filters=Filters.group)
-PURGE_HANDLER = CommandHandler(CMD_PREFIX, "purge", purge, filters=Filters.group)
+DELETE_HANDLER = CustomCommandHandler(CMD_PREFIX, "del", del_message, filters=Filters.group)
+PURGE_HANDLER = CustomCommandHandler(CMD_PREFIX, "purge", purge, filters=Filters.group)
 
 dispatcher.add_handler(DELETE_HANDLER)
 dispatcher.add_handler(PURGE_HANDLER)

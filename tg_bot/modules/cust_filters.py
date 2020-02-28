@@ -10,6 +10,7 @@ from telegram.utils.helpers import escape_markdown, mention_markdown, mention_ht
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -307,8 +308,8 @@ from same line.
 
 __mod_name__ = "Filters"
 
-FILTER_HANDLER = CommandHandler(CMD_PREFIX, "filter", filters)
-STOP_HANDLER = CommandHandler(CMD_PREFIX, "stop", stop_filter)
+FILTER_HANDLER = CustomCommandHandler(CMD_PREFIX, "filter", filters)
+STOP_HANDLER = CustomCommandHandler(CMD_PREFIX, "stop", stop_filter)
 LIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "filters", list_handlers, admin_ok=True)
 CUST_FILTER_HANDLER = MessageHandler(CustomFilters.has_text, reply_filter, Filters.update.edited_message)
 

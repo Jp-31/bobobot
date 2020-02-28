@@ -7,8 +7,8 @@ from telegram.utils.helpers import escape_markdown, mention_html
 from telegram.error import BadRequest
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
-from tg_bot.modules.helper_funcs.handlers import CMD_STARTERS
 from tg_bot.modules.helper_funcs.misc import is_module_loaded
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.log_channel import loggable
 import html
 
@@ -25,7 +25,7 @@ if is_module_loaded(FILENAME):
     DISABLE_OTHER = []
     ADMIN_CMDS = []
 
-    class DisableAbleCommandHandler(PrefixHandler):
+    class DisableAbleCommandHandler(CustomCommandHandler):
         def __init__(self, prefix, command, callback, admin_ok=False, **kwargs):
             super().__init__(prefix, command, callback, **kwargs)
             self.admin_ok = admin_ok
@@ -42,6 +42,7 @@ if is_module_loaded(FILENAME):
         def check_update(self, update: Update):
             chat = update.effective_chat  # type: Optional[Chat]
             user = update.effective_user  # type: Optional[User]
+            
             if super().check_update(update):
                 # Should be safe since check_update passed.
                 command = update.effective_message.text_html.split(None, 1)[0][1:].split('@')[0]
@@ -64,9 +65,9 @@ if is_module_loaded(FILENAME):
         
 
 
-    class DisableAbleRegexHandler(RegexHandler):
+    class DisableAbleRegexHandler(MessageHandler):
         def __init__(self, pattern, callback, friendly="", **kwargs):
-            super().__init__(pattern, callback, **kwargs)
+            super().__init__(Filters.regex(pattern), callback, **kwargs)
             DISABLE_OTHER.append(friendly or pattern)
             self.friendly = friendly or pattern
 
@@ -80,7 +81,6 @@ if is_module_loaded(FILENAME):
     def disable(update: Update, context: CallbackContext):
         chat = update.effective_chat  # type: Optional[Chat]
         if len(context.args) >= 1:
-            print("Disable: " + context.args[0])
             disable_cmd = context.args[0]
 
             if disable_cmd in set(DISABLE_CMDS + DISABLE_OTHER):
@@ -100,7 +100,7 @@ if is_module_loaded(FILENAME):
         chat = update.effective_chat  # type: Optional[Chat]
         if len(context.args) >= 1:
             enable_cmd = context.args[0]
-            if enable_cmd.startswith(CMD_STARTERS):
+            if enable_cmd.startswith(CMD_PREFIX):
                 enable_cmd = enable_cmd[1:]
 
             if sql.enable_command(chat.id, enable_cmd):
@@ -230,11 +230,11 @@ It'll also allow you to auto-delete them, stopping people from blue-texting.
  - /disabledel <on/off/yes/no>: delete disabled commands when used by non-admins.
     """.format(dispatcher.bot.first_name)
 
-    DISABLE_HANDLER = CommandHandler(CMD_PREFIX, "disable", disable, filters=Filters.group)
-    ENABLE_HANDLER = CommandHandler(CMD_PREFIX, "enable", enable, filters=Filters.group)
+    DISABLE_HANDLER = CustomCommandHandler(CMD_PREFIX, "disable", disable, filters=Filters.group)
+    ENABLE_HANDLER = CustomCommandHandler(CMD_PREFIX, "enable", enable, filters=Filters.group)
 #    DISABLEDEL_HANDLER = CommandHandler("disabledel", disable_del, pass_args=True, filters=Filters.group)
-    COMMANDS_HANDLER = CommandHandler(CMD_PREFIX, ["cmds", "disabled"], commands, filters=Filters.group)
-    TOGGLE_HANDLER = CommandHandler(CMD_PREFIX, ["disableable", "listcmds"], list_cmds, filters=Filters.group)
+    COMMANDS_HANDLER = CustomCommandHandler(CMD_PREFIX, ["cmds", "disabled"], commands, filters=Filters.group)
+    TOGGLE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["disableable", "listcmds"], list_cmds, filters=Filters.group)
 #    DISABLEDEL = MessageHandler(Filters.command & Filters.group, del_cmds)
 
     dispatcher.add_handler(DISABLE_HANDLER)
@@ -245,5 +245,5 @@ It'll also allow you to auto-delete them, stopping people from blue-texting.
 #    dispatcher.add_handler(DISABLEDEL_HANDLER)
 
 else:
-    DisableAbleCommandHandler = CommandHandler
+    DisableAbleCommandHandler = CustomCommandHandler
     DisableAbleRegexHandler = RegexHandler

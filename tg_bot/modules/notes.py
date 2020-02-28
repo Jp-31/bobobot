@@ -5,7 +5,7 @@ from typing import Optional, List
 from telegram import MAX_MESSAGE_LENGTH, ParseMode, InlineKeyboardMarkup
 from telegram import Message, Update, Bot
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, RegexHandler, CallbackContext
+from telegram.ext import CommandHandler, RegexHandler, CallbackContext, MessageHandler, Filters
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown, mention_markdown, mention_html
 
@@ -13,6 +13,7 @@ import tg_bot.modules.sql.notes_sql as sql
 from tg_bot import dispatcher, MESSAGE_DUMP, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.log_channel import loggable
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_note_type
@@ -317,11 +318,11 @@ This will retrieve the note and send it without formatting it; getting you the r
 
 __mod_name__ = "Notes"
 
-GET_HANDLER = CommandHandler(CMD_PREFIX, "get", cmd_get)
-HASH_GET_HANDLER = RegexHandler(r"^#[^\s]+", hash_get)
+GET_HANDLER = CustomCommandHandler(CMD_PREFIX, "get", cmd_get)
+HASH_GET_HANDLER = MessageHandler(Filters.regex(r"^#[^\s]+"), hash_get)
 
-SAVE_HANDLER = CommandHandler(CMD_PREFIX, "save", save)
-DELETE_HANDLER = CommandHandler(CMD_PREFIX, "clear", clear)
+SAVE_HANDLER = CustomCommandHandler(CMD_PREFIX, "save", save)
+DELETE_HANDLER = CustomCommandHandler(CMD_PREFIX, "clear", clear)
 
 LIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["notes", "saved"], list_notes, admin_ok=True)
 

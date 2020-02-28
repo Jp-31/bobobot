@@ -9,6 +9,7 @@ from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.global_mutes_sql as sql
 from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, SUDO_USERS, SUPPORT_USERS, STRICT_GMUTE, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -356,14 +357,14 @@ You can disable the Global mutes by `/gmutestat off` or enable `/gmutestat on`
 
 __mod_name__ = "Global Mutes"
 
-GMUTE_HANDLER = CommandHandler(CMD_PREFIX, "gmute", gmute,
+GMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "gmute", gmute,
                               filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter | CustomFilters.support_filter)
-UNGMUTE_HANDLER = CommandHandler(CMD_PREFIX, "ungmute", ungmute,
+UNGMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "ungmute", ungmute,
                                 filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter | CustomFilters.support_filter)
-GMUTE_LIST = CommandHandler(CMD_PREFIX, "gmutelist", gmutelist,
+GMUTE_LIST = CustomCommandHandler(CMD_PREFIX, "gmutelist", gmutelist,
                            filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter | CustomFilters.support_filter)
 
-GMUTE_STATUS = CommandHandler(CMD_PREFIX, "gmutestat", gmutestat, filters=Filters.group)
+GMUTE_STATUS = CustomCommandHandler(CMD_PREFIX, "gmutestat", gmutestat, filters=Filters.group)
 
 GMUTE_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_gmute)
 

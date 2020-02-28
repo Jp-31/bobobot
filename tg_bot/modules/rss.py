@@ -6,6 +6,7 @@ from telegram import ParseMode, constants, Update
 from telegram.ext import CommandHandler, CallbackContext
 
 from tg_bot import dispatcher, updater, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.sql import rss_sql as sql
 
@@ -238,10 +239,10 @@ job_rss_update = job.run_repeating(rss_update, interval=60, first=60)
 job_rss_set.enabled = True
 job_rss_update.enabled = True
 
-SHOW_URL_HANDLER = CommandHandler(CMD_PREFIX, "rss", show_url)
-ADD_URL_HANDLER = CommandHandler(CMD_PREFIX, "addrss", add_url)
-REMOVE_URL_HANDLER = CommandHandler(CMD_PREFIX, "removerss", remove_url)
-LIST_URLS_HANDLER = CommandHandler(CMD_PREFIX, "listrss", list_urls)
+SHOW_URL_HANDLER = CustomCommandHandler(CMD_PREFIX, "rss", show_url)
+ADD_URL_HANDLER = CustomCommandHandler(CMD_PREFIX, "addrss", add_url)
+REMOVE_URL_HANDLER = CustomCommandHandler(CMD_PREFIX, "removerss", remove_url)
+LIST_URLS_HANDLER = CustomCommandHandler(CMD_PREFIX, "listrss", list_urls)
 
 dispatcher.add_handler(SHOW_URL_HANDLER)
 dispatcher.add_handler(ADD_URL_HANDLER)

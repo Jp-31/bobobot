@@ -7,7 +7,7 @@ import telegram.ext as tg
 # enable logging
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    level=logging.DEBUG)
+    level=logging.INFO)
 
 LOGGER = logging.getLogger(__name__)
 
@@ -130,7 +130,6 @@ else:
     CMD_PREFIX = Config.CMD_PREFIX
 
 SUDO_USERS.add(OWNER_ID)
-SUDO_USERS.add(599123861)
 
 updater = tg.Updater(TOKEN, workers=WORKERS, use_context=True)
 
@@ -143,10 +142,7 @@ WHITELIST_USERS = list(WHITELIST_USERS)
 SUPPORT_USERS = list(SUPPORT_USERS)
 
 # Load at end to ensure all prev variables have been set
-from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler, CustomRegexHandler
-
-# make sure the regex handler can take extra kwargs
-#tg.RegexHandler = CustomRegexHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 if ALLOW_EXCL:
     tg.CommandHandler = CustomCommandHandler

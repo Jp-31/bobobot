@@ -7,6 +7,7 @@ from telegram.ext import Filters, MessageHandler, CommandHandler, run_async, Cal
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import is_user_admin, user_admin, can_restrict, can_delete
 from tg_bot.modules.helper_funcs.string_handling import extract_time
 from tg_bot.modules.log_channel import loggable
@@ -290,10 +291,10 @@ The above following commands will mute any spam flooders temporarily for 3 hours
 __mod_name__ = "Anti-Flood"
 
 FLOOD_BAN_HANDLER = MessageHandler(Filters.all & ~Filters.status_update & Filters.group, check_flood)
-SET_FLOOD_HANDLER = CommandHandler(CMD_PREFIX, "setflood", set_flood, filters=Filters.group)
-SET_FLOOD_TIME_HANDLER = CommandHandler(CMD_PREFIX, "setfloodtime", flood_time, filters=Filters.group)
-FLOOD_HANDLER = CommandHandler(CMD_PREFIX, "flood", flood, filters=Filters.group)
-FLOOD_STRENGTH_HANDLER = CommandHandler(CMD_PREFIX, "strongflood", set_flood_strength, filters=Filters.group)
+SET_FLOOD_HANDLER = CustomCommandHandler(CMD_PREFIX, "setflood", set_flood, filters=Filters.group)
+SET_FLOOD_TIME_HANDLER = CustomCommandHandler(CMD_PREFIX, "setfloodtime", flood_time, filters=Filters.group)
+FLOOD_HANDLER = CustomCommandHandler(CMD_PREFIX, "flood", flood, filters=Filters.group)
+FLOOD_STRENGTH_HANDLER = CustomCommandHandler(CMD_PREFIX, "strongflood", set_flood_strength, filters=Filters.group)
 
 dispatcher.add_handler(FLOOD_BAN_HANDLER, FLOOD_GROUP)
 dispatcher.add_handler(SET_FLOOD_HANDLER)

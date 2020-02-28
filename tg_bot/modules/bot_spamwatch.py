@@ -5,8 +5,9 @@ from telegram import Message, Update, Bot, User, Chat, ParseMode, InlineKeyboard
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, CallbackContext
 
-from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER
+from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER, CMD_PREFIX
 import tg_bot.modules.sql.global_bans_sql as sql
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from telegram.utils.helpers import mention_html
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
     is_user_admin, is_user_in_chat, is_bot_admin
@@ -29,7 +30,7 @@ def welcome_spamwatch_ban(update: Update, context: CallbackContext, user_id):
         if banned_user.reason:
             spamwatch_text = banned_user.reason
 
-        spam_ban(update, context, user.id, spamwatch_text)
+        spam_ban_join(update, context, user.id, spamwatch_text)
 
 @run_async
 def enforce_spamwatch_ban(update: Update, context: CallbackContext):
@@ -62,22 +63,22 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
     user = update.effective_user  # type: Optional[User]
     message = update.effective_message  # type: Optional[Message]
 
-    reply = "{} has been banned by " \
-            "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(user.id, 
-                                                                                          user.first_name))
+    reply = "User {} has been banned by " \
+            "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(user.id, user.first_name))
     
     if reason:
         reply += "\n<b>Reason:</b> <i>{}</i>".format(reason)
 
     try:
         chat.kick_member(user_id)
-        message.reply_text(reply, parse_mode=ParseMode.HTML)
+        message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
         return
 
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text('Banned!', quote=False)
+            chat.kick_member(user_id)
+            message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
             return
         else:
             LOGGER.warning(update)
@@ -87,40 +88,74 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
 
     return ""
 
-# @run_async
-# @user_admin
-# def spamwatch_stat(update: Update, context: CallbackContext):
-#     chat = update.effective_chat
-#     if len(args) > 0:
-#         if args[0].lower() in ["on", "yes"]:
-#             sql.enable_gbans(update.effective_chat.id)
-#             spamstat = "I've enabled SpamWatch ban for {}. Therefore, "
-#                        "You're protected from active spammers, trolls, unsavoury characters."
-#             update.effective_message.reply_text(spamstat.format(chat.title))
-#
-#         elif args[0].lower() in ["off", "no"]:
-#             sql.disable_gbans(update.effective_chat.id)
-#             spamstat = "I've disabled SpamWatch bans for {}. SpamWatch ban wont affect your users "
-#                        "anymore. You'll be less protected from any trolls and spammers "
-#                        "though!"
-#             update.effective_message.reply_text(spamstat.format(chat.title))
-#     else:
-#         update.effective_message.reply_text("Give me some arguments to choose a setting! on/off, yes/no!\n\n"
-#                                             "Your current setting is: {}\n"
-#                                             "When True, any SpamWatch bans that happen will also happen in your group. "
-#                                             "When False, they won't, leaving you at the possible mercy of "
-#                                             "spammers.".format(sql.does_chat_gban(update.effective_chat.id)))
+@run_async
+@bot_admin
+@can_restrict
+@user_admin
+def spam_ban_join(update: Update, context: CallbackContext, user_id, reason) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+    
+    if message.new_chat_members:
+        new_members = update.effective_message.new_chat_members
+        for mem in new_members:
+            reply = "User {} has been banned by " \
+                    "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(mem.id, mem.first_name))
+            
+            if reason:
+                reply += "\n<b>Reason:</b> <i>{}</i>".format(reason)
 
-def __user_info__(user_id):
-    is_banned = client.get_ban(user_id)
+            try:
+                chat.kick_member(user_id)
+                message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                return
 
-    user = client.get_ban(user_id)
-    text =""
-    if is_banned:
-        text = "This user is currently banned by Spamwatch."
-        if user.reason:
-            text += "\nReason: {}".format(html.escape(user.reason))
-    return text
+            except BadRequest as excp:
+                if excp.message == "Reply message not found":
+                    # Do not reply
+                    chat.kick_member(user_id)
+                    message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
+                    return
+                else:
+                    LOGGER.warning(update)
+                    LOGGER.exception("ERROR banning user %s in chat %s (%s) due to %s", user_id, chat.title, chat.id,
+                                    excp.message)
+                    message.reply_text("Well damn, I can't ban that user.")
+
+    return ""
+
+@run_async
+@user_admin
+def spamwatch_stat(update: Update, context: CallbackContext):
+    chat = update.effective_chat
+    msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
+    args_option = ""
+    
+    if len(args) > 1:
+        args_option = args[1].lower()
+    
+    if len(args) >= 2:
+        if args_option != "" and args_option in ["on", "yes"]:
+            sql.enable_spamw(update.effective_chat.id)
+            spamstat_1 = "I've enabled SpamWatch ban for {}. Therefore, " \
+                         "You're protected from spammers, spambots, trolls and unsavoury characters.".format(chat.title)
+            msg.reply_text(spamstat_1)
+        
+        elif args_option != "" and args_option in ["off", "no"]:
+            sql.disable_spamw(update.effective_chat.id)
+            spamstat_2 = "I've disabled SpamWatch bans for {}. SpamWatch ban wont affect your users " \
+                          "anymore. You'll be less protected from any trolls and spammers " \
+                          "though!".format(chat.title)
+            update.effective_message.reply_text(spamstat_2)
+    else:
+        msg.reply_text("Give me some arguments to choose a setting! on/off, yes/no!\n\n"
+                       "Your current setting is: {}\n"
+                       "When True, any SpamWatch bans that happen will also happen in your group. "
+                       "When False, they won't, leaving you at the possible mercy of "
+                       "spammers.".format(sql.does_chat_spamwatch(chat.id)))
+
     
 __help__ = """
 SpamWatch maintains a large constantly updated ban-list of spambots, trolls, unsavoury characters. {} will constantly \
@@ -137,4 +172,7 @@ disengage from protecting the chatroom.
 __mod_name__ = "SpamWatch"
     
 SPAM_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_spamwatch_ban)
+SPAM_STATUS = CustomCommandHandler(CMD_PREFIX, "spamwatch", spamwatch_stat, filters=Filters.group)
+
 dispatcher.add_handler(SPAM_ENFORCER, SPAM_ENFORCE_GROUP)
+dispatcher.add_handler(SPAM_STATUS)

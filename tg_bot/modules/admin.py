@@ -5,13 +5,14 @@ import tldextract
 from telegram import Message, Chat, Update, Bot, User
 from telegram import ParseMode, InlineKeyboardMarkup, InlineKeyboardButton
 from telegram.error import BadRequest
-from telegram.ext import CommandHandler, Filters, RegexHandler, CallbackContext
+from telegram.ext import CommandHandler, Filters, RegexHandler, CallbackContext, MessageHandler
 from telegram.ext.dispatcher import run_async
 from telegram.utils.helpers import escape_markdown, mention_html, mention_markdown
 
 from tg_bot import dispatcher, CMD_PREFIX
 import tg_bot.modules.sql.setlink_sql as sql
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, can_promote, user_admin, can_pin
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.helper_funcs.msg_types import get_message_type
@@ -438,7 +439,7 @@ def __chat_settings__(chat_id, user_id):
         dispatcher.bot.get_chat_member(chat_id, user_id).status in ("administrator", "creator"))
 
 
-__help__ = """""
+__help__ = """
 Lazy to promote or demote someone for admins? Want to see basic information about chat? \
 All stuff about chatroom such as admin lists, pinning or grabbing an invite link can be \
 done easily using {}.
@@ -469,17 +470,17 @@ An example of promoting someone to admins:
 
 __mod_name__ = "Admin"
 
-PIN_HANDLER = CommandHandler(CMD_PREFIX, "pin", pin, filters=Filters.group)
-UNPIN_HANDLER = CommandHandler(CMD_PREFIX, "unpin", unpin, filters=Filters.group)
+PIN_HANDLER = CustomCommandHandler(CMD_PREFIX, "pin", pin, filters=Filters.group)
+UNPIN_HANDLER = CustomCommandHandler(CMD_PREFIX, "unpin", unpin, filters=Filters.group)
 LINK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "link", link_public)
-SET_LINK_HANDLER = CommandHandler(CMD_PREFIX, "setlink", set_link, filters=Filters.group)
-LINKMODE_HANDLER = CommandHandler(CMD_PREFIX, "linkmode", linkmode, filters=Filters.group)
-RESET_LINK_HANDLER = CommandHandler(CMD_PREFIX, "clearlink", clear_link, filters=Filters.group)
-HASH_LINK_HANDLER = RegexHandler("#link", link_public)
-INVITE_HANDLER = CommandHandler(CMD_PREFIX, "invitelink", invite, filters=Filters.group)
-PERMAPIN_HANDLER = CommandHandler(CMD_PREFIX, ["permapin", "perma"], permapin, filters=Filters.group)
-PROMOTE_HANDLER = CommandHandler(CMD_PREFIX, "promote", promote, filters=Filters.group)
-DEMOTE_HANDLER = CommandHandler(CMD_PREFIX, "demote", demote, filters=Filters.group)
+SET_LINK_HANDLER = CustomCommandHandler(CMD_PREFIX, "setlink", set_link, filters=Filters.group)
+LINKMODE_HANDLER = CustomCommandHandler(CMD_PREFIX, "linkmode", linkmode, filters=Filters.group)
+RESET_LINK_HANDLER = CustomCommandHandler(CMD_PREFIX, "clearlink", clear_link, filters=Filters.group)
+HASH_LINK_HANDLER = MessageHandler(Filters.regex(r"#link"), link_public)
+INVITE_HANDLER = CustomCommandHandler(CMD_PREFIX, "invitelink", invite, filters=Filters.group)
+PERMAPIN_HANDLER = CustomCommandHandler(CMD_PREFIX, ["permapin", "perma"], permapin, filters=Filters.group)
+PROMOTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "promote", promote, filters=Filters.group)
+DEMOTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "demote", demote, filters=Filters.group)
 ADMINLIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["adminlist", "staff"], adminlist, filters=Filters.group)
 
 dispatcher.add_handler(PIN_HANDLER)
