@@ -749,11 +749,11 @@ def enforce_gmute(update: Update, context: CallbackContext):
                     welcome_gmute(update, context, mem.id)
 
             
-            if msg.reply_to_message:
-                user = msg.reply_to_message.from_user  # type: Optional[User]
-                if user and not is_user_admin(chat, user.id):
-                    notification1(update, context, user.id, should_message=False)
-                    check_and_mute(update, context, user.id)
+        if msg.reply_to_message:
+            user = msg.reply_to_message.from_user  # type: Optional[User]
+            if user and not is_user_admin(chat, user.id):
+                notification1(update, context, user.id, should_message=False)
+                check_and_mute(update, context, user.id)
         else:
             if msg.new_chat_members:
                 new_members = update.effective_message.new_chat_members
