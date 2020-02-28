@@ -4,6 +4,7 @@ from telegram import Update, Bot, Chat, Message, User
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, Filters, CallbackContext
 from telegram.ext.dispatcher import run_async
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 
@@ -25,6 +26,6 @@ def getlink(update: Update, context: CallbackContext):
         update.effective_message.reply_text("I don't have access to the invite link!")
 
 
-GETLINK_HANDLER = CommandHandler(CMD_PREFIX, "getlink", getlink, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+GETLINK_HANDLER = CustomCommandHandler(CMD_PREFIX, "getlink", getlink, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 
 dispatcher.add_handler(GETLINK_HANDLER)

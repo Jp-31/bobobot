@@ -668,6 +668,7 @@ def gmutelist(update: Update, context: CallbackContext):
         update.effective_message.reply_document(document=output, filename="gmutelist.txt",
                                                 caption="Here is the list of currently gmuted users.")
 
+
 def notification1(update: Update, context: CallbackContext, user_id, should_message=True):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message  # type: Optional[Message]
@@ -742,6 +743,7 @@ def enforce_gmute(update: Update, context: CallbackContext):
         if not gmute_alert:
             if msg.new_chat_members:
                 new_members = update.effective_message.new_chat_members
+        if msg.reply_to_message:
                 for mem in new_members:
                     notification_welc(update, context, mem.id)
                     welcome_gmute(update, context, mem.id)
@@ -829,6 +831,7 @@ def gmutestat(update: Update, context: CallbackContext):
                                             "When True, any gmutes that happen will also happen in your group. "
                                             "When False, they won't, leaving you at the possible mercy of "
                                             "spammers.".format(sql.does_chat_gmute(update.effective_chat.id)))
+
 
 def __stats__():
     return "{} gmuted users.".format(sql.num_gmuted_users())

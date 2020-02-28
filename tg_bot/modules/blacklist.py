@@ -11,6 +11,7 @@ import tg_bot.modules.sql.blacklist_sql as sql
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.log_channel import loggable
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, user_not_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user_and_text, extract_text
 from tg_bot.modules.helper_funcs.misc import split_message
@@ -203,8 +204,8 @@ Tip: To copy list of saved blacklist simply use `/blacklist copy`, {} will send 
 """.format(dispatcher.bot.first_name)
 
 BLACKLIST_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "blacklist", blacklist, filters=Filters.group, admin_ok=True)
-ADD_BLACKLIST_HANDLER = CommandHandler(CMD_PREFIX, "addblacklist", add_blacklist, filters=Filters.group)
-UNBLACKLIST_HANDLER = CommandHandler(CMD_PREFIX, ["unblacklist", "rmblacklist"], unblacklist, filters=Filters.group)
+ADD_BLACKLIST_HANDLER = CustomCommandHandler(CMD_PREFIX, "addblacklist", add_blacklist, filters=Filters.group)
+UNBLACKLIST_HANDLER = CustomCommandHandler(CMD_PREFIX, ["unblacklist", "rmblacklist"], unblacklist, filters=Filters.group)
 BLACKLIST_DEL_HANDLER = MessageHandler(
     (Filters.text | Filters.command | Filters.sticker | Filters.photo) & Filters.group, del_blacklist)
 

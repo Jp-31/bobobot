@@ -10,6 +10,7 @@ from telegram import Message, Chat, Update, Bot, ParseMode, User
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, RegexHandler, run_async, CallbackContext
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from telegram.utils.helpers import mention_html
 
@@ -181,9 +182,9 @@ Any chat members can subscribe to pinger.
 __mod_name__ = "Pinger"
 
 PINGER_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "pingtime", ping_list, admin_ok=True)
-PINGERME_HANDLER = CommandHandler(CMD_PREFIX, "pingme", pingme)
-UNPINGERME_HANDLER = CommandHandler(CMD_PREFIX, "unpingme", unpingme)
-UNPINGERALL_HANDLER = CommandHandler(CMD_PREFIX, "unpingall", unping_all)
+PINGERME_HANDLER = CustomCommandHandler(CMD_PREFIX, "pingme", pingme)
+UNPINGERME_HANDLER = CustomCommandHandler(CMD_PREFIX, "unpingme", unpingme)
+UNPINGERALL_HANDLER = CustomCommandHandler(CMD_PREFIX, "unpingall", unping_all)
 
 dispatcher.add_handler(PINGER_HANDLER)
 dispatcher.add_handler(PINGERME_HANDLER)

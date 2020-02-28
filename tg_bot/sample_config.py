@@ -37,7 +37,7 @@ class Config(object):
     BAN_STICKER = 'CAADAgADOwADPPEcAXkko5EB3YGYAg'  # banhammer marie sticker
     ALLOW_EXCL = False  # Allow ! commands as well as /
     SPAMWATCH_TOKEN = '' # Get a token for the SpamWatch client to protect your chats from spammers
-    CMD_PREFIX = ['/'] # Add more characters to decide how commands can be used
+    CMD_PREFIX = ('/') # Add more characters to decide how commands can be used
 
 
 class Production(Config):

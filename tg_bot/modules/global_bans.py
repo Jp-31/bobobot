@@ -10,6 +10,7 @@ from telegram.utils.helpers import mention_html
 import tg_bot.modules.sql.global_bans_sql as sql
 from tg_bot import dispatcher, OWNER_ID, SUPER_ADMINS, SUDO_USERS, EVIDENCES_LOG, MESSAGE_DUMP, SUPPORT_USERS, \
      STRICT_GBAN, GBAN_LOG, CMD_PREFIX, SPAMWATCH_TOKEN
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -926,23 +927,23 @@ You can disable the Global bans by `/gbanstat off` or enable `/gbanstat on`.
 
 __mod_name__ = "Global Bans"
 
-GBAN_HANDLER = CommandHandler(CMD_PREFIX, "gban", gban,
+GBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "gban", gban,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
-FBAN_HANDLER = CommandHandler(CMD_PREFIX, "fban", fban,
+FBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "fban", fban,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter
                               | CustomFilters.super_admins_filter)
-UNFBAN_HANDLER = CommandHandler(CMD_PREFIX, "unfban", unfban,
+UNFBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "unfban", unfban,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter 
                               | CustomFilters.super_admins_filter)
-UNGBAN_HANDLER = CommandHandler(CMD_PREFIX, "ungban", ungban,
+UNGBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "ungban", ungban,
                                 filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
-GBAN_LIST = CommandHandler(CMD_PREFIX, "gbanlist", gbanlist,
+GBAN_LIST = CustomCommandHandler(CMD_PREFIX, "gbanlist", gbanlist,
                            filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
                            
-GBAN_STATUS = CommandHandler(CMD_PREFIX, "gbanstat", gbanstat, filters=Filters.group)
-GBAN_ALERT = CommandHandler(CMD_PREFIX, "gbanalert", gbanalert, filters=Filters.group)
+GBAN_STATUS = CustomCommandHandler(CMD_PREFIX, "gbanstat", gbanstat, filters=Filters.group)
+GBAN_ALERT = CustomCommandHandler(CMD_PREFIX, "gbanalert", gbanalert, filters=Filters.group)
 
-PROOF_HANDLER = CommandHandler(CMD_PREFIX, ["proof", "p"], msg_evidence, 
+PROOF_HANDLER = CustomCommandHandler(CMD_PREFIX, ["proof", "p"], msg_evidence, 
                                 filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
 
 GBAN_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_gban)

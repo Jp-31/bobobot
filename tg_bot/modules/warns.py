@@ -11,6 +11,7 @@ from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, BAN_STICKER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import is_user_admin, bot_admin, user_admin_no_reply, user_admin, \
     can_restrict
 from tg_bot.modules.helper_funcs.extraction import extract_text, extract_user_and_text, extract_user
@@ -648,18 +649,18 @@ This will warn the user called @user, with a reason of 'Because warning is fun'
 
 __mod_name__ = "Warnings"
 
-WARN_HANDLER = CommandHandler(CMD_PREFIX, "warn", warn_user, filters=Filters.group)
-RESET_WARN_HANDLER = CommandHandler(CMD_PREFIX, ["resetwarn", "resetwarns"], reset_warns, filters=Filters.group)
-REMOVE_WARNS_HANDLER = CommandHandler(CMD_PREFIX, ["rmwarn", "unwarn"], remove_warns, filters=Filters.group)
+WARN_HANDLER = CustomCommandHandler(CMD_PREFIX, "warn", warn_user, filters=Filters.group)
+RESET_WARN_HANDLER = CustomCommandHandler(CMD_PREFIX, ["resetwarn", "resetwarns"], reset_warns, filters=Filters.group)
+REMOVE_WARNS_HANDLER = CustomCommandHandler(CMD_PREFIX, ["rmwarn", "unwarn"], remove_warns, filters=Filters.group)
 CALLBACK_QUERY_HANDLER = CallbackQueryHandler(button, pattern=r"rm_warn")
 MYWARNS_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "warns", warns, filters=Filters.group)
-ADD_WARN_HANDLER = CommandHandler(CMD_PREFIX, "addwarn", add_warn_filter, filters=Filters.group)
-RM_WARN_HANDLER = CommandHandler(CMD_PREFIX, ["nowarn", "stopwarn"], remove_warn_filter, filters=Filters.group)
+ADD_WARN_HANDLER = CustomCommandHandler(CMD_PREFIX, "addwarn", add_warn_filter, filters=Filters.group)
+RM_WARN_HANDLER = CustomCommandHandler(CMD_PREFIX, ["nowarn", "stopwarn"], remove_warn_filter, filters=Filters.group)
 LIST_WARN_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["warnlist", "warnfilters"], list_warn_filters, filters=Filters.group, admin_ok=True)
 WARN_FILTER_HANDLER = MessageHandler(CustomFilters.has_text & Filters.group, reply_filter)
-WARN_LIMIT_HANDLER = CommandHandler(CMD_PREFIX, ["warnlimit", "setwarnlimit"], set_warn_limit, filters=Filters.group)
+WARN_LIMIT_HANDLER = CustomCommandHandler(CMD_PREFIX, ["warnlimit", "setwarnlimit"], set_warn_limit, filters=Filters.group)
 # WARN_STRENGTH_HANDLER = CommandHandler(CMD_PREFIX, "strongwarn", set_warn_strength, pass_args=True, filters=Filters.group)
-WARN_MODE_HANDLER = CommandHandler(CMD_PREFIX, ["warnmode", "setwarnmode"], set_warn_mode, filters=Filters.group)
+WARN_MODE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["warnmode", "setwarnmode"], set_warn_mode, filters=Filters.group)
 
 dispatcher.add_handler(WARN_HANDLER)
 dispatcher.add_handler(CALLBACK_QUERY_HANDLER)

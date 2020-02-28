@@ -12,6 +12,7 @@ from telegram.utils.helpers import mention_html
 import tg_bot.modules.sql.welcome_sql as sql
 from tg_bot.modules.sql.global_bans_sql import get_gbanned_user
 from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX, SPAMWATCH_TOKEN
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_welcome_type
@@ -739,16 +740,16 @@ __mod_name__ = "Greetings"
 
 NEW_MEM_HANDLER = MessageHandler(Filters.status_update.new_chat_members, new_member)
 LEFT_MEM_HANDLER = MessageHandler(Filters.status_update.left_chat_member, left_member)
-WELC_PREF_HANDLER = CommandHandler(CMD_PREFIX, "welcome", welcome, filters=Filters.group)
-GOODBYE_PREF_HANDLER = CommandHandler(CMD_PREFIX, "goodbye", goodbye, filters=Filters.group)
-SET_WELCOME = CommandHandler(CMD_PREFIX, "setwelcome", set_welcome, filters=Filters.group)
-SET_GOODBYE = CommandHandler(CMD_PREFIX, "setgoodbye", set_goodbye, filters=Filters.group)
-RESET_WELCOME = CommandHandler(CMD_PREFIX, "resetwelcome", reset_welcome, filters=Filters.group)
-RESET_GOODBYE = CommandHandler(CMD_PREFIX, "resetgoodbye", reset_goodbye, filters=Filters.group)
-CLEAN_WELCOME = CommandHandler(CMD_PREFIX, "cleanwelcome", clean_welcome, filters=Filters.group)
-WELCOMEMUTE_HANDLER = CommandHandler(CMD_PREFIX, "welcomemute", welcomemute, filters=Filters.group)
-DEL_JOINED = CommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
-WELCOME_HELP = CommandHandler(CMD_PREFIX, "welcomehelp", welcome_help)
+WELC_PREF_HANDLER = CustomCommandHandler(CMD_PREFIX, "welcome", welcome, filters=Filters.group)
+GOODBYE_PREF_HANDLER = CustomCommandHandler(CMD_PREFIX, "goodbye", goodbye, filters=Filters.group)
+SET_WELCOME = CustomCommandHandler(CMD_PREFIX, "setwelcome", set_welcome, filters=Filters.group)
+SET_GOODBYE = CustomCommandHandler(CMD_PREFIX, "setgoodbye", set_goodbye, filters=Filters.group)
+RESET_WELCOME = CustomCommandHandler(CMD_PREFIX, "resetwelcome", reset_welcome, filters=Filters.group)
+RESET_GOODBYE = CustomCommandHandler(CMD_PREFIX, "resetgoodbye", reset_goodbye, filters=Filters.group)
+CLEAN_WELCOME = CustomCommandHandler(CMD_PREFIX, "cleanwelcome", clean_welcome, filters=Filters.group)
+WELCOMEMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "welcomemute", welcomemute, filters=Filters.group)
+DEL_JOINED = CustomCommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
+WELCOME_HELP = CustomCommandHandler(CMD_PREFIX, "welcomehelp", welcome_help)
 BUTTON_VERIFY_HANDLER = CallbackQueryHandler(user_button, pattern=r"user_join_")
 
 dispatcher.add_handler(NEW_MEM_HANDLER)

@@ -8,6 +8,7 @@ from telegram.ext import CommandHandler, RegexHandler, run_async, Filters, Callb
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_not_admin, user_admin
 from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.sql import reporting_sql as sql
@@ -228,9 +229,9 @@ Note that the report commands do not work when admins use them; or when used to 
 admins don't need to report, or be reported!
 """.format(dispatcher.bot.first_name, dispatcher.bot.first_name)
 
-REPORT_HANDLER = CommandHandler(CMD_PREFIX, "report", report, filters=Filters.group)
-SOLVE_HANDLER = CommandHandler(CMD_PREFIX, ["solve", "solved"], report_solve, filters=Filters.group)
-SETTING_HANDLER = CommandHandler(CMD_PREFIX, "reports", report_setting)
+REPORT_HANDLER = CustomCommandHandler(CMD_PREFIX, "report", report, filters=Filters.group)
+SOLVE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["solve", "solved"], report_solve, filters=Filters.group)
+SETTING_HANDLER = CustomCommandHandler(CMD_PREFIX, "reports", report_setting)
 ADMIN_REPORT_HANDLER = MessageHandler(Filters.regex("(?i)@admin(s)?"), report)
 
 dispatcher.add_handler(REPORT_HANDLER, REPORT_GROUP)

@@ -9,6 +9,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, User
 
 from tg_bot import dispatcher, BAN_STICKER, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
     is_user_admin, is_user_in_chat, is_bot_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user_and_text
@@ -417,13 +418,13 @@ An example of muting someone silently:
 
 __mod_name__ = "Banhammer"
 
-BAN_HANDLER = CommandHandler(CMD_PREFIX, "ban", ban, filters=Filters.group)
-TEMPBAN_HANDLER = CommandHandler(CMD_PREFIX, ["tban", "tempban"], temp_ban, filters=Filters.group)
-KICK_HANDLER = CommandHandler(CMD_PREFIX, "kick", kick, filters=Filters.group)
-UNBAN_HANDLER = CommandHandler(CMD_PREFIX, "unban", unban, filters=Filters.group)
+BAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "ban", ban, filters=Filters.group)
+TEMPBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, ["tban", "tempban"], temp_ban, filters=Filters.group)
+KICK_HANDLER = CustomCommandHandler(CMD_PREFIX, "kick", kick, filters=Filters.group)
+UNBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "unban", unban, filters=Filters.group)
 KICKME_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "kickme", kickme, filters=Filters.group)
 BANME_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "banme", banme, filters=Filters.group)
-SBAN_HANDLER = CommandHandler(CMD_PREFIX, "sban", sban, filters=Filters.group)
+SBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "sban", sban, filters=Filters.group)
 
 dispatcher.add_handler(BAN_HANDLER)
 dispatcher.add_handler(TEMPBAN_HANDLER)

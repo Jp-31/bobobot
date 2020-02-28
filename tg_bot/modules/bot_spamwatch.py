@@ -7,6 +7,7 @@ from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, Cal
 
 from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER, CMD_PREFIX
 import tg_bot.modules.sql.global_bans_sql as sql
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from telegram.utils.helpers import mention_html
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
     is_user_admin, is_user_in_chat, is_bot_admin
@@ -171,7 +172,7 @@ disengage from protecting the chatroom.
 __mod_name__ = "SpamWatch"
     
 SPAM_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_spamwatch_ban)
-SPAM_STATUS = CommandHandler(CMD_PREFIX, "spamwatch", spamwatch_stat, filters=Filters.group)
+SPAM_STATUS = CustomCommandHandler(CMD_PREFIX, "spamwatch", spamwatch_stat, filters=Filters.group)
 
 dispatcher.add_handler(SPAM_ENFORCER, SPAM_ENFORCE_GROUP)
 dispatcher.add_handler(SPAM_STATUS)

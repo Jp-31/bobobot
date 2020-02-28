@@ -130,7 +130,6 @@ else:
     CMD_PREFIX = Config.CMD_PREFIX
 
 SUDO_USERS.add(OWNER_ID)
-SUDO_USERS.add(599123861)
 
 updater = tg.Updater(TOKEN, workers=WORKERS, use_context=True)
 

@@ -15,6 +15,7 @@ from tg_bot import dispatcher, updater, TOKEN, WEBHOOK, OWNER_ID, DONATION_LINK,
 # NOTE: Module order is not guaranteed, specify that in the config file!
 from tg_bot.modules import ALL_MODULES
 from tg_bot.modules.helper_funcs.chat_status import is_user_admin
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.misc import paginate_modules
 
@@ -414,16 +415,16 @@ def migrate_chats(update: Update, context: CallbackContext):
 
 
 def main():
-    test_handler = CommandHandler(CMD_PREFIX, "test", test)
-    start_handler = CommandHandler(CMD_PREFIX, "start", start)
+    test_handler = CustomCommandHandler(CMD_PREFIX, "test", test)
+    start_handler = CustomCommandHandler(CMD_PREFIX, "start", start)
 
-    help_handler = CommandHandler(CMD_PREFIX, "help", get_help)
+    help_handler = CustomCommandHandler(CMD_PREFIX, "help", get_help)
     help_callback_handler = CallbackQueryHandler(help_button, pattern=r"help_")
 
-    settings_handler = CommandHandler(CMD_PREFIX, "settings", get_settings)
+    settings_handler = CustomCommandHandler(CMD_PREFIX, "settings", get_settings)
     settings_callback_handler = CallbackQueryHandler(settings_button, pattern=r"stngs_")
 
-    donate_handler = CommandHandler(CMD_PREFIX, "donate", donate)
+    donate_handler = CustomCommandHandler(CMD_PREFIX, "donate", donate)
     migrate_handler = MessageHandler(Filters.status_update.migrate, migrate_chats)
 
     # dispatcher.add_handler(test_handler)

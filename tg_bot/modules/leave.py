@@ -5,6 +5,7 @@ from telegram.ext import MessageHandler, Filters, CommandHandler, CallbackContex
 from telegram.ext.dispatcher import run_async
 from typing import List
 from tg_bot.modules.helper_funcs.filters import CustomFilters
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 import telegram
 from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, CMD_PREFIX
@@ -26,5 +27,5 @@ __help__ = ""
 
 __mod_name__ = "Leave"
 
-LEAVE_HANDLER = CommandHandler(CMD_PREFIX, "leave", leave, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+LEAVE_HANDLER = CustomCommandHandler(CMD_PREFIX, "leave", leave, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
 dispatcher.add_handler(LEAVE_HANDLER)
