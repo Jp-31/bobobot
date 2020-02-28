@@ -19,14 +19,13 @@ from tg_bot.modules.log_channel import loggable
 def purge(update: Update, context: CallbackContext) -> str:
     msg = update.effective_message  # type: Optional[Message]
     args = msg.text.split(" ")
-    print("\n\n\n\n" + str(args[1]))
     if msg.reply_to_message:
         user = update.effective_user  # type: Optional[User]
         chat = update.effective_chat  # type: Optional[Chat]
         if can_delete(chat, context.bot.id):
             message_id = msg.reply_to_message.message_id
             delete_to = msg.message_id - 1
-            if args and args[1].isdigit():
+            if args and len(args) > 1 and args[1].isdigit():
                 new_del = message_id + int(args[1])
                 # No point deleting messages which haven't been written yet.
                 if new_del < delete_to:
