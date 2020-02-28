@@ -7,6 +7,7 @@ from telegram.ext import run_async, CommandHandler, Filters, CallbackContext
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, BAN_STICKER, CMD_PREFIX, LOGGER
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
     is_user_admin, is_user_in_chat, is_bot_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user_and_text
@@ -462,11 +463,11 @@ __help__ = ""
 
 __mod_name__ = "Remote Commands"
 
-RBAN_HANDLER = CommandHandler(CMD_PREFIX, "rban", rban, filters=CustomFilters.sudo_filter)
-RUNBAN_HANDLER = CommandHandler(CMD_PREFIX, "runban", runban, filters=CustomFilters.sudo_filter)
-RKICK_HANDLER = CommandHandler(CMD_PREFIX, "rkick", rkick, filters=CustomFilters.sudo_filter)
-RMUTE_HANDLER = CommandHandler(CMD_PREFIX, "rmute", rmute, filters=CustomFilters.sudo_filter)
-RUNMUTE_HANDLER = CommandHandler(CMD_PREFIX, "runmute", runmute, filters=CustomFilters.sudo_filter)
+RBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "rban", rban, filters=CustomFilters.sudo_filter)
+RUNBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "runban", runban, filters=CustomFilters.sudo_filter)
+RKICK_HANDLER = CustomCommandHandler(CMD_PREFIX, "rkick", rkick, filters=CustomFilters.sudo_filter)
+RMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "rmute", rmute, filters=CustomFilters.sudo_filter)
+RUNMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "runmute", runmute, filters=CustomFilters.sudo_filter)
 
 dispatcher.add_handler(RBAN_HANDLER)
 dispatcher.add_handler(RUNBAN_HANDLER)

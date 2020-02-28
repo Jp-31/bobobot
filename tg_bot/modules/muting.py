@@ -9,6 +9,7 @@ from telegram.utils.helpers import mention_html
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup, ParseMode, User, CallbackQuery, ChatPermissions
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_admin, can_restrict
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.string_handling import extract_time
@@ -423,13 +424,13 @@ __help__ = ""
 
 __mod_name__ = "Muting & Restricting"
 
-MUTE_HANDLER = CommandHandler(CMD_PREFIX, "mute", mute, filters=Filters.group)
-SMUTE_HANDLER = CommandHandler(CMD_PREFIX, "smute", smute, filters=Filters.group)
-UNMUTE_HANDLER = CommandHandler(CMD_PREFIX, "unmute", unmute, filters=Filters.group)
-TEMPMUTE_HANDLER = CommandHandler(CMD_PREFIX, ["tmute", "tempmute"], temp_mute, filters=Filters.group)
-TEMP_NOMEDIA_HANDLER = CommandHandler(CMD_PREFIX, ["trestrict", "temprestrict"], temp_nomedia, filters=Filters.group)
-NOMEDIA_HANDLER = CommandHandler(CMD_PREFIX, ["restrict", "nomedia"], nomedia, filters=Filters.group)
-MEDIA_HANDLER = CommandHandler(CMD_PREFIX, "unrestrict", media, filters=Filters.group)
+MUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "mute", mute, filters=Filters.group)
+SMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "smute", smute, filters=Filters.group)
+UNMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "unmute", unmute, filters=Filters.group)
+TEMPMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["tmute", "tempmute"], temp_mute, filters=Filters.group)
+TEMP_NOMEDIA_HANDLER = CustomCommandHandler(CMD_PREFIX, ["trestrict", "temprestrict"], temp_nomedia, filters=Filters.group)
+NOMEDIA_HANDLER = CustomCommandHandler(CMD_PREFIX, ["restrict", "nomedia"], nomedia, filters=Filters.group)
+MEDIA_HANDLER = CustomCommandHandler(CMD_PREFIX, "unrestrict", media, filters=Filters.group)
 
 dispatcher.add_handler(MUTE_HANDLER)
 dispatcher.add_handler(SMUTE_HANDLER)

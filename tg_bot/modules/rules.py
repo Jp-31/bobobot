@@ -11,6 +11,7 @@ import tg_bot.modules.sql.rules_sql as sql
 from tg_bot import dispatcher, CMD_PREFIX
 from tg_bot.modules.log_channel import loggable
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
 from tg_bot.modules.helper_funcs.string_handling import markdown_parser
 
@@ -171,9 +172,9 @@ Every chat works with different rules; this module will help make those rules cl
 __mod_name__ = "Rules"
 
 GET_RULES_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "rules", get_rules, filters=Filters.group)
-SET_RULES_MODE = CommandHandler(CMD_PREFIX, "chatrules", chat_rules, filters=Filters.group)
-SET_RULES_HANDLER = CommandHandler(CMD_PREFIX, "setrules", set_rules, filters=Filters.group)
-RESET_RULES_HANDLER = CommandHandler(CMD_PREFIX, "clearrules", clear_rules, filters=Filters.group)
+SET_RULES_MODE = CustomCommandHandler(CMD_PREFIX, "chatrules", chat_rules, filters=Filters.group)
+SET_RULES_HANDLER = CustomCommandHandler(CMD_PREFIX, "setrules", set_rules, filters=Filters.group)
+RESET_RULES_HANDLER = CustomCommandHandler(CMD_PREFIX, "clearrules", clear_rules, filters=Filters.group)
 
 dispatcher.add_handler(GET_RULES_HANDLER)
 dispatcher.add_handler(SET_RULES_HANDLER)

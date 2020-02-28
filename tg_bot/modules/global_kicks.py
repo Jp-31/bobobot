@@ -5,6 +5,7 @@ from telegram.error import BadRequest, TelegramError
 from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, CallbackContext
 from telegram.utils.helpers import mention_html
 from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, SUDO_USERS, SUPPORT_USERS, STRICT_GBAN, CMD_PREFIX
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -118,10 +119,10 @@ you and your groups by removing spam flooders as quickly as possible. They can b
 
 __mod_name__ = "Global Kicks"
 
-GKICK_HANDLER = CommandHandler(CMD_PREFIX, "gkick", gkick,
+GKICK_HANDLER = CustomCommandHandler(CMD_PREFIX, "gkick", gkick,
                               filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter | CustomFilters.support_filter)
 
-GKICK_STATUS = CommandHandler(CMD_PREFIX, "gkickstat", gkickstat, filters=Filters.group)
+GKICK_STATUS = CustomCommandHandler(CMD_PREFIX, "gkickstat", gkickstat, filters=Filters.group)
 
 dispatcher.add_handler(GKICK_HANDLER)
 dispatcher.add_handler(GKICK_STATUS)

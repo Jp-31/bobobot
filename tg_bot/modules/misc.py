@@ -17,6 +17,7 @@ from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, SUDO_USERS, SUPPORT_USERS,
 from tg_bot.__main__ import GDPR
 from tg_bot.__main__ import STATS, USER_INFO
 from tg_bot.modules.disable import DisableAbleCommandHandler, DisableAbleRegexHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
@@ -784,13 +785,13 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
 __mod_name__ = "Misc"
 
 ID_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "id", get_id)
-IP_HANDLER = CommandHandler(CMD_PREFIX, "ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
+IP_HANDLER = CustomCommandHandler(CMD_PREFIX, "ip", get_bot_ip, filters=Filters.chat(OWNER_ID))
 
 # TIME_HANDLER = CommandHandler("time", get_time, pass_args=True)
 
 RUNS_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "runs", runs)
 FIRST_MESSAGE_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, ["first_message", "first"], firstmsg)
-S_HANDLER = CommandHandler(CMD_PREFIX, "s", msg_save, filters=Filters.group)
+S_HANDLER = CustomCommandHandler(CMD_PREFIX, "s", msg_save, filters=Filters.group)
 RNUM_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "rnum", rnum)
 #TIME_HANDLER = CommandHandler("time", get_time)
 SLAP_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "slap", slap)
@@ -800,12 +801,12 @@ INFO_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"info", info)
 PING_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "ping", ping)
 GREETINGS_REGEX_HANDLER = DisableAbleRegexHandler("(?i)hi {}".format(dispatcher.bot.first_name),
                                                                      greet, friendly="botgreet")
-ECHO_HANDLER = CommandHandler(CMD_PREFIX, "echo", echo, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
-MD_HELP_HANDLER = CommandHandler(CMD_PREFIX, "markdownhelp", markdown_help, filters=Filters.private)
+ECHO_HANDLER = CustomCommandHandler(CMD_PREFIX, "echo", echo, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+MD_HELP_HANDLER = CustomCommandHandler(CMD_PREFIX, "markdownhelp", markdown_help, filters=Filters.private)
 SET_NICK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "setnick", set_nick)
 GET_NICK_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "nick", get_nick)
 
-STATS_HANDLER = CommandHandler(CMD_PREFIX, "stats", stats, filters=CustomFilters.sudo_filter)
+STATS_HANDLER = CustomCommandHandler(CMD_PREFIX, "stats", stats, filters=CustomFilters.sudo_filter)
 #GDPR_HANDLER = CommandHandler("gdpr", gdpr, filters=Filters.private)
 
 dispatcher.add_handler(ID_HANDLER)

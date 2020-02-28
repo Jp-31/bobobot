@@ -12,6 +12,7 @@ if is_module_loaded(FILENAME):
     from telegram.utils.helpers import escape_markdown
 
     from tg_bot import dispatcher, LOGGER, CMD_PREFIX
+    from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
     from tg_bot.modules.helper_funcs.chat_status import user_admin
     from tg_bot.modules.sql import log_channel_sql as sql
 
@@ -162,9 +163,9 @@ Setting the log channel is done by:
 
     __mod_name__ = "Log Channels"
 
-    LOG_HANDLER = CommandHandler(CMD_PREFIX, "logchannel", logging)
-    SET_LOG_HANDLER = CommandHandler(CMD_PREFIX, "setlog", setlog)
-    UNSET_LOG_HANDLER = CommandHandler(CMD_PREFIX, "unsetlog", unsetlog)
+    LOG_HANDLER = CustomCommandHandler(CMD_PREFIX, "logchannel", logging)
+    SET_LOG_HANDLER = CustomCommandHandler(CMD_PREFIX, "setlog", setlog)
+    UNSET_LOG_HANDLER = CustomCommandHandler(CMD_PREFIX, "unsetlog", unsetlog)
 
     dispatcher.add_handler(LOG_HANDLER)
     dispatcher.add_handler(SET_LOG_HANDLER)

@@ -9,6 +9,7 @@ from telegram.ext import CommandHandler, run_async, CallbackContext
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 from tg_bot.__main__ import DATA_IMPORT
 from tg_bot.modules.helper_funcs.chat_status import user_admin
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
 
 @run_async
@@ -74,8 +75,8 @@ __help__ = """
 that files/photos can't be imported due to telegram restrictions.
  - /export: !!! This isn't a command yet, but should be coming soon!
 """
-IMPORT_HANDLER = CommandHandler(CMD_PREFIX, "import", import_data)
-EXPORT_HANDLER = CommandHandler(CMD_PREFIX, "export", export_data)
+IMPORT_HANDLER = CustomCommandHandler(CMD_PREFIX, "import", import_data)
+EXPORT_HANDLER = CustomCommandHandler(CMD_PREFIX, "export", export_data)
 
 dispatcher.add_handler(IMPORT_HANDLER)
 # dispatcher.add_handler(EXPORT_HANDLER)

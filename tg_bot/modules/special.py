@@ -12,6 +12,7 @@ import telegram
 import tg_bot.modules.sql.users_sql as sql
 from tg_bot import dispatcher, iSUDO_USERS, OWNER_ID, LOGGER, CMD_PREFIX
 from tg_bot.modules.helper_funcs.filters import CustomFilters
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.disable import DisableAbleCommandHandler
 
 USERS_GROUP=4
@@ -84,10 +85,10 @@ __help__ = ""  # no help string
 
 __mod_name__ = "Special"
 
-SNIPE_HANDLER = CommandHandler(CMD_PREFIX, "snipe", snipe, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
-BANALL_HANDLER = CommandHandler(CMD_PREFIX, "banall", banall, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
-QUICKSCOPE_HANDLER = CommandHandler(CMD_PREFIX, "quickscope", quickscope, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
-QUICKUNBAN_HANDLER = CommandHandler(CMD_PREFIX, "quickunban", quickunban, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
+SNIPE_HANDLER = CustomCommandHandler(CMD_PREFIX, "snipe", snipe, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
+BANALL_HANDLER = CustomCommandHandler(CMD_PREFIX, "banall", banall, filters=Filters.user(OWNER_ID) | CustomFilters.isudo_filter)
+QUICKSCOPE_HANDLER = CustomCommandHandler(CMD_PREFIX, "quickscope", quickscope, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
+QUICKUNBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "quickunban", quickunban, filters=CustomFilters.sudo_filter | CustomFilters.isudo_filter)
 
 dispatcher.add_handler(SNIPE_HANDLER)
 dispatcher.add_handler(BANALL_HANDLER)

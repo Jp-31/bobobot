@@ -14,6 +14,7 @@ from alphabet_detector import AlphabetDetector
 import tg_bot.modules.sql.locks_sql as sql
 from tg_bot import dispatcher, SUDO_USERS, LOGGER, CMD_PREFIX
 from tg_bot.modules.disable import DisableAbleCommandHandler
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import can_delete, is_user_admin, user_not_admin, user_admin, \
     bot_can_delete, is_bot_admin
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -359,9 +360,9 @@ Locking bots will stop non-admins from adding bots to the chat.
 __mod_name__ = "Locks & Whitelists"
 
 LOCKTYPES_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "locktypes", locktypes)
-LOCK_HANDLER = CommandHandler(CMD_PREFIX, "lock", lock, filters=Filters.group)
-UNLOCK_HANDLER = CommandHandler(CMD_PREFIX, "unlock", unlock, filters=Filters.group)
-LOCKED_HANDLER = CommandHandler(CMD_PREFIX, "locks", list_locks, filters=Filters.group)
+LOCK_HANDLER = CustomCommandHandler(CMD_PREFIX, "lock", lock, filters=Filters.group)
+UNLOCK_HANDLER = CustomCommandHandler(CMD_PREFIX, "unlock", unlock, filters=Filters.group)
+LOCKED_HANDLER = CustomCommandHandler(CMD_PREFIX, "locks", list_locks, filters=Filters.group)
 
 dispatcher.add_handler(LOCK_HANDLER)
 dispatcher.add_handler(UNLOCK_HANDLER)
