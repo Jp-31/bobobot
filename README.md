@@ -18,12 +18,12 @@ Once you've setup your database and your configuration (see below) is complete, 
 ## Setting up the bot (Read this before trying to use!):
 Please make sure to use python3.7.4, as I cannot guarantee everything will work as expected on older python versions!
 
-Make sure to use python-telegram-bot version 12.4.0 as older version will not work anymore.
+Make sure to use python-telegram-bot version 12.4.2 as older version will not work anymore.
 
 ### SpamWatch Configuration
 
 Inside the sample_config.py you will find a SPAMWATCH_TOKEN variable. If you want your chats protected by [SpamWatch](docs.spamwat.ch) request a key
-form that site and add it in.
+from that site and add it in.
 
  - `SPAMWATCH_TOKEN`: Enables SpamWatch protection in your group chats.
 
