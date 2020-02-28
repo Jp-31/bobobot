@@ -110,13 +110,13 @@ def new_member(update: Update, context: CallbackContext):
     user_id = user.id
     human_checks = sql.get_human_checks(user_id, chat.id)
     gban_checks = get_gbanned_user(user_id)
-    spamwatch_banned = client.get_ban(user_id)
 
     if should_welc:
         sent = None
         new_members = update.effective_message.new_chat_members
         for new_mem in new_members:
-            # Give the owner a special welcome         
+            spamwatch_banned = client.get_ban(new_mem.id)
+            # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
                 continue
@@ -133,7 +133,8 @@ def new_member(update: Update, context: CallbackContext):
             # Make bot greet admins
             elif new_mem.id == context.bot.id:
                 update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding me to {}" 
-                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, context.bot.first_name, chat_name))
+                " and be sure to check /help in PM for more commands and tricks!".format(user.first_name, 
+                                                                                         context.bot.first_name, chat_name))
 
             else:
                 # If welcome message is media, send with appropriate function

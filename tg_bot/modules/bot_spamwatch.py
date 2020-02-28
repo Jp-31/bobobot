@@ -29,7 +29,7 @@ def welcome_spamwatch_ban(update: Update, context: CallbackContext, user_id):
         if banned_user.reason:
             spamwatch_text = banned_user.reason
 
-        spam_ban(update, context, user.id, spamwatch_text)
+        spam_ban_join(update, context, user.id, spamwatch_text)
 
 @run_async
 def enforce_spamwatch_ban(update: Update, context: CallbackContext):
@@ -76,13 +76,51 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text('Banned!', quote=False)
+            chat.kick_member(user_id)
+            message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
             return
         else:
             LOGGER.warning(update)
             LOGGER.exception("ERROR banning user %s in chat %s (%s) due to %s", user_id, chat.title, chat.id,
                              excp.message)
             message.reply_text("Well damn, I can't ban that user.")
+
+    return ""
+
+@run_async
+@bot_admin
+@can_restrict
+@user_admin
+def spam_ban_join(update: Update, context: CallbackContext, user_id, reason) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    message = update.effective_message  # type: Optional[Message]
+    
+    if message.new_chat_members:
+        new_members = update.effective_message.new_chat_members
+        for mem in new_members:
+            reply = "User {} has been banned by " \
+                    "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(mem.id, mem.first_name))
+            
+            if reason:
+                reply += "\n<b>Reason:</b> <i>{}</i>".format(reason)
+
+            try:
+                chat.kick_member(user_id)
+                message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True)
+                return
+
+            except BadRequest as excp:
+                if excp.message == "Reply message not found":
+                    # Do not reply
+                    chat.kick_member(user_id)
+                    message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
+                    return
+                else:
+                    LOGGER.warning(update)
+                    LOGGER.exception("ERROR banning user %s in chat %s (%s) due to %s", user_id, chat.title, chat.id,
+                                    excp.message)
+                    message.reply_text("Well damn, I can't ban that user.")
 
     return ""
 
