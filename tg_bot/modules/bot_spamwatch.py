@@ -62,9 +62,8 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
     user = update.effective_user  # type: Optional[User]
     message = update.effective_message  # type: Optional[Message]
 
-    reply = "{} has been banned by " \
-            "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(user.id, 
-                                                                                          user.first_name))
+    reply = "User {} has been banned by " \
+            "<a href=\"http://telegram.me/SpamWatchFederationLog\">SpamWatch</a>!".format(mention_html(user.id, user.first_name))
     
     if reason:
         reply += "\n<b>Reason:</b> <i>{}</i>".format(reason)
@@ -102,7 +101,7 @@ def spamwatch_stat(update: Update, context: CallbackContext):
         if args_option != "" and args_option in ["on", "yes"]:
             sql.enable_spamw(update.effective_chat.id)
             spamstat_1 = "I've enabled SpamWatch ban for {}. Therefore, " \
-                       "You're protected from spammers, spambots, trolls and unsavoury characters.".format(chat.title)
+                         "You're protected from spammers, spambots, trolls and unsavoury characters.".format(chat.title)
             msg.reply_text(spamstat_1)
         
         elif args_option != "" and args_option in ["off", "no"]:
@@ -116,7 +115,7 @@ def spamwatch_stat(update: Update, context: CallbackContext):
                        "Your current setting is: {}\n"
                        "When True, any SpamWatch bans that happen will also happen in your group. "
                        "When False, they won't, leaving you at the possible mercy of "
-                       "spammers.".format(sql.does_chat_spamwatch(update.effective_chat.id)))
+                       "spammers.".format(sql.does_chat_spamwatch(chat.id)))
 
     
 __help__ = """
