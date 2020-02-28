@@ -21,8 +21,15 @@ UNMUTE_PERMISSIONS = ChatPermissions(can_send_messages=True,
                                      can_send_other_messages=True,
                                      can_add_web_page_previews=True)
 
+MEDIA_PERMISSIONS = ChatPermissions(can_send_messages=True,
+                                     can_send_media_messages=True,
+                                     can_send_polls=True,
+                                     can_send_other_messages=True,
+                                     can_add_web_page_previews=True)
+
 NOMEDIA_PERMISSIONS = ChatPermissions(can_send_messages=True,
                                      can_send_media_messages=False,
+                                     can_send_polls=False,
                                      can_send_other_messages=False,
                                      can_add_web_page_previews=False)
 
@@ -181,7 +188,8 @@ def temp_mute(update: Update, context: CallbackContext) -> str:
     try:
         if member.can_send_messages is None or member.can_send_messages:
             context.bot.restrict_chat_member(chat.id, user_id, MUTE_PERMISSIONS, until_date=mutetime)
-            message.reply_text("Muted for {}!".format(time_val))
+            message.reply_text("{} muted for {}!".format(mention_html(member.user.id, member.user.first_name), time_val),
+                               parse_mode=ParseMode.HTML)
             return log
         else:
             message.reply_text("This user is already muted.")
@@ -189,7 +197,8 @@ def temp_mute(update: Update, context: CallbackContext) -> str:
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text("Muted for {}!".format(time_val), quote=False)
+            message.reply_text("{} muted for {}!".format(mention_html(member.user.id, member.user.first_name), time_val),
+                                                         parse_mode=ParseMode.HTML, quote=False)
             return log
         else:
             LOGGER.warning(update)
@@ -266,7 +275,7 @@ def media(update: Update, context: CallbackContext) -> str:
                 and member.can_send_other_messages and member.can_add_web_page_previews:
             message.reply_text("This user already has the rights to send anything.")
         else:
-            context.bot.restrict_chat_member(chat.id, int(user_id), UNMUTE_PERMISSIONS)
+            context.bot.restrict_chat_member(chat.id, int(user_id), MEDIA_PERMISSIONS)
             
             reply = "Yep, {} can send media again!".format(mention_html(member.user.id, member.user.first_name))
             message.reply_text(reply, parse_mode=ParseMode.HTML)
@@ -347,7 +356,9 @@ def temp_nomedia(update: Update, context: CallbackContext) -> str:
     try:
         if member.can_send_messages is None or member.can_send_messages:
             context.bot.restrict_chat_member(chat.id, user_id, NOMEDIA_PERMISSIONS, until_date=mutetime)
-            message.reply_text("Restricted from sending media for {}!".format(time_val))
+            message.reply_text("{} restricted from sending media for {}!".format(mention_html(member.user.id, 
+                                                                                 member.user.first_name), time_val), 
+                                                                                 parse_mode=ParseMode.HTML)
             return log
         else:
             message.reply_text("This user is already restricted.")
@@ -355,7 +366,9 @@ def temp_nomedia(update: Update, context: CallbackContext) -> str:
     except BadRequest as excp:
         if excp.message == "Reply message not found":
             # Do not reply
-            message.reply_text("Restricted for {}!".format(time_val), quote=False)
+            message.reply_text("{} restricted from sending media for {}!".format(mention_html(member.user.id, 
+                                                                                 member.user.first_name), time_val), 
+                                                                                 parse_mode=ParseMode.HTML, quote=False)
             return log
         else:
             LOGGER.warning(update)
