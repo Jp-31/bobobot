@@ -229,6 +229,14 @@ def __load_gban_stat_list():
         GBANSTAT_LIST = {x.chat_id for x in SESSION.query(GbanSettings).all() if not x.setting}
     finally:
         SESSION.close()
+        
+def __load_spamwatch_list():
+    global SPAMWATCH_LIST
+    try:
+        SPAMWATCH_LIST = {x.chat_id for x in SESSION.query(
+            GbanSettings).all() if not x.spamwatch}
+    finally:
+        SESSION.close()
 
 
 def migrate_chat(old_chat_id, new_chat_id):
@@ -244,3 +252,4 @@ def migrate_chat(old_chat_id, new_chat_id):
 # Create in memory userid to avoid disk access
 __load_gbanned_userid_list()
 __load_gban_stat_list()
+__load_spamwatch_list()
