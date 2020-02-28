@@ -1,5 +1,5 @@
 from html import escape
-import time
+import time, spamwatch
 import re
 from typing import Optional, List
 
@@ -11,7 +11,7 @@ from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.welcome_sql as sql
 from tg_bot.modules.sql.global_bans_sql import get_gbanned_user
-from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX
+from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX, SPAMWATCH_TOKEN
 from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_welcome_type
@@ -20,6 +20,7 @@ from tg_bot.modules.helper_funcs.string_handling import markdown_parser, \
 from tg_bot.modules.log_channel import loggable
 
 VALID_WELCOME_FORMATTERS = ['first', 'last', 'fullname', 'username', 'id', 'count', 'chatname', 'mention']
+client = spamwatch.Client(SPAMWATCH_TOKEN)
 
 ENUM_FUNC_MAP = {
     sql.Types.TEXT.value: dispatcher.bot.send_message,
@@ -109,19 +110,26 @@ def new_member(update: Update, context: CallbackContext):
     user_id = user.id
     human_checks = sql.get_human_checks(user_id, chat.id)
     gban_checks = get_gbanned_user(user_id)
+    spamwatch_banned = client.get_ban(user_id)
 
     if should_welc:
         sent = None
         new_members = update.effective_message.new_chat_members
         for new_mem in new_members:
-            # Give the owner a special welcome                
+            # Give the owner a special welcome         
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
                 continue
             
+            #### BAN CHECKERS ####
+            # Ignore welc messages for gbanned users
             if gban_checks:
                 continue
-                
+
+            # Ignore welc messages for SpamWatch banned users
+            if spamwatch_banned:
+                continue
+            
             # Make bot greet admins
             elif new_mem.id == context.bot.id:
                 update.effective_message.reply_text("Hey {}, I'm {}! Thank you for adding me to {}" 
@@ -211,12 +219,19 @@ def left_member(update: Update, context: CallbackContext):
     if should_goodbye:
         left_mem = update.effective_message.left_chat_member
         gban_checks = get_gbanned_user(left_mem.id)
+        spamwatch_banned = client.get_ban(left_mem.id)
         if left_mem:
             # Ignore bot being kicked
             if left_mem.id == context.bot.id:
                 return
-
+            
+            ### BAN CHECKERS ###
+            # Ignore gbanned users
             if gban_checks:
+                return
+            
+            # Ignore spamwatch banned users
+            if spamwatch_banned:
                 return
 
             # Give the owner a special goodbye
