@@ -6,6 +6,8 @@ Can be found on telegram as [Natalie](https://t.me/Maver_ckBot).
 
 Alternatively, find us on telegram [CrEaTiiOn187](https://t.me/CrEaTiiOn_187) & [Maverick](https://t.me/stillmav).
 
+For support please use [NatalieSupport](https://t.me/NatalieSupport)!
+
 ## Starting the bot.
 
 Once you've setup your database and your configuration (see below) is complete, simply run:
