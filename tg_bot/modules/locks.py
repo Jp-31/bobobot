@@ -115,30 +115,32 @@ def lock(update: Update, context: CallbackContext) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
     message = update.effective_message  # type: Optional[Message]
+    args = message.text.split(" ")
+    
     if can_delete(chat, context.bot.id):
-        if len(context.args) >= 1:
-            if context.args[0] in LOCK_TYPES:
-                sql.update_lock(chat.id, context.args[0], locked=True)
-                message.reply_text("Locked {} messages for all non-admins!".format(context.args[0]))
+        if len(args) >= 2:
+            if args[1] in LOCK_TYPES:
+                sql.update_lock(chat.id, args[1], locked=True)
+                message.reply_text("Locked {} messages for all non-admins!".format(args[1]))
 
                 return "<b>{}:</b>" \
                        "\n#LOCK" \
                        "\n<b>• Admin:</b> {}" \
                        "\nLocked <code>{}</code>.".format(html.escape(chat.title),
-                                                          mention_html(user.id, user.first_name), context.args[0])
+                                                          mention_html(user.id, user.first_name), args[1])
 
-            elif context.args[0] in RESTRICTION_TYPES:
-                sql.update_restriction(chat.id, context.args[0], locked=True)
-                if context.args[0] == "previews":
+            elif args[1] in RESTRICTION_TYPES:
+                sql.update_restriction(chat.id, args[1], locked=True)
+                if args[1] == "previews":
                     members = users_sql.get_chat_members(str(chat.id))
                     restr_members(context.bot, chat.id, members, messages=True, media=True, other=True)
 
-                message.reply_text("Locked {} for all non-admins!".format(context.args[0]))
+                message.reply_text("Locked {} for all non-admins!".format(args[1]))
                 return "<b>{}:</b>" \
                        "\n#LOCK" \
                        "\n<b>• Admin:</b> {}" \
                        "\nLocked <code>{}</code>.".format(html.escape(chat.title),
-                                                          mention_html(user.id, user.first_name), context.args[0])
+                                                          mention_html(user.id, user.first_name), args[1])
 
             else:
                 message.reply_text("You've entered an unknown locktypes, Try /locktypes for the list of lockables")
@@ -156,43 +158,45 @@ def unlock(update: Update, context: CallbackContext) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
     message = update.effective_message  # type: Optional[Message]
+    args = message.text.split(" ")
+    
     if is_user_admin(chat, message.from_user.id):
-        if len(context.args) >= 1:
-            if context.args[0] in LOCK_TYPES:
-                sql.update_lock(chat.id, context.args[0], locked=False)
-                message.reply_text("Unlocked {} for everyone!".format(context.args[0]))
+        if len(args) >= 2:
+            if args[1] in LOCK_TYPES:
+                sql.update_lock(chat.id, args[1], locked=False)
+                message.reply_text("Unlocked {} for everyone!".format(args[1]))
                 return "<b>{}:</b>" \
                        "\n#UNLOCK" \
                        "\n<b>• Admin:</b> {}" \
                        "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
-                                                            mention_html(user.id, user.first_name), context.args[0])
+                                                            mention_html(user.id, user.first_name), args[1])
 
-            elif context.args[0] in RESTRICTION_TYPES:
-                sql.update_restriction(chat.id, context.args[0], locked=False)
+            elif args[1] in RESTRICTION_TYPES:
+                sql.update_restriction(chat.id, args[1], locked=False)
                 """
                 members = users_sql.get_chat_members(chat.id)
-                if context.args[0] == "messages":
+                if args[1] == "messages":
                     unrestr_members(bot, chat.id, members, media=False, other=False, previews=False)
 
-                elif context.args[0] == "media":
+                elif args[1] == "media":
                     unrestr_members(bot, chat.id, members, other=False, previews=False)
 
-                elif context.args[0] == "other":
+                elif args[1] == "other":
                     unrestr_members(bot, chat.id, members, previews=False)
 
-                elif context.args[0] == "previews":
+                elif args[1] == "previews":
                     unrestr_members(bot, chat.id, members)
 
-                elif context.args[0] == "all":
+                elif args[1] == "all":
                     unrestr_members(bot, chat.id, members, True, True, True, True)
                 """
-                message.reply_text("Unlocked {} for everyone!".format(context.args[0]))
+                message.reply_text("Unlocked {} for everyone!".format(args[1]))
 
                 return "<b>{}:</b>" \
                        "\n#UNLOCK" \
                        "\n<b>Admin:</b> {}" \
                        "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
-                                                            mention_html(user.id, user.first_name), context.args[0])
+                                                            mention_html(user.id, user.first_name), args[1])
             else:
                 message.reply_text("What are you trying to unlock...? Try /locktypes for the list of lockables")
 
