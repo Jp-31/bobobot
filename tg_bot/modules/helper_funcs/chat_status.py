@@ -121,7 +121,7 @@ def user_admin(func):
         elif not user:
             pass
 
-        elif DEL_CMDS and " " not in update.effective_message.text:
+        elif DEL_CMDS and " " not in update.effective_message.text.split(" ")[0]:
             update.effective_message.delete()
 
         else:
@@ -143,7 +143,7 @@ def user_admin_no_reply(func):
         elif not user:
             pass
 
-        elif DEL_CMDS and " " not in update.effective_message.text:
+        elif DEL_CMDS and " " not in update.effective_message.text.split(" ")[0]:
             update.effective_message.delete()
 
     return is_admin
