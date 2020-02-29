@@ -17,7 +17,7 @@ class CustomCommandHandler(tg.PrefixHandler):
 
             if message.text:
                 text_list = message.text.split()
-                if text_list[0].split("@")[0].lower() in self.command and len(text_list[0].split("@")) > 1 and text_list[0].split("@")[1].lower() == message.bot.username:
+                if text_list[0].split("@")[0].lower() in self.command and len(text_list[0].split("@")) > 1 and text_list[0].split("@")[1] == message.bot.username:
                     filter_result = self.filters(update)
                     if filter_result:
                         return text_list[1:], filter_result
