@@ -9,7 +9,7 @@ from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.global_bans_sql as sql
 from tg_bot import dispatcher, OWNER_ID, SUPER_ADMINS, SUDO_USERS, EVIDENCES_LOG, MESSAGE_DUMP, SUPPORT_USERS, \
-     STRICT_GBAN, GBAN_LOG, CMD_PREFIX, SPAMWATCH_TOKEN
+     STRICT_GBAN, GBAN_LOG, CMD_PREFIX, SPAMWATCH_TOKEN, LOGGER
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
@@ -684,6 +684,7 @@ def gban_notification(update: Update, context: CallbackContext, user_info, shoul
             except:
                 context.bot.send_message(chat.id, 
                                             chatban_text, parse_mode=ParseMode.HTML)
+                LOGGER.exception()
 
 def check_and_ban(update, context, user_id):
     chat = update.effective_chat  # type: Optional[Chat]

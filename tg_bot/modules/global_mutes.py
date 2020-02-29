@@ -690,6 +690,7 @@ def gmute_notification(update: Update, context: CallbackContext, user_id, should
             except:
                 context.bot.send_message(chat.id, 
                                          chatmute_text, parse_mode=ParseMode.HTML)
+                LOGGER.exception()
 
 def check_and_mute(update, context, user_id):
     chat = update.effective_chat  # type: Optional[Chat]
