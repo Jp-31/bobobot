@@ -74,7 +74,6 @@ def remove_mention(user_id, chat_id):
 def reset_all_mentions(user_id, chat_id):
     try:
         reset_mentions = SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).all()
-        print(str(reset_mentions))
         if reset_mentions:
             SESSION.query(Mention).filter(Mention.chat_id == str(chat_id)).delete()
             SESSION.commit()

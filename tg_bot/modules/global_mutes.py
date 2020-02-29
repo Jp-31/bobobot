@@ -670,7 +670,7 @@ def gmutelist(update: Update, context: CallbackContext):
                                                 caption="Here is the list of currently gmuted users.")
 
 
-def notification1(update: Update, context: CallbackContext, user_id, should_message=False):
+def gmute_notification(update: Update, context: CallbackContext, user_id, should_message=False):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message  # type: Optional[Message]
     user = context.bot.get_chat(user_id)
@@ -685,27 +685,11 @@ def notification1(update: Update, context: CallbackContext, user_id, should_mess
             chatmute_text += "\n<b>Reason</b>: {}".format(user_r.reason)
                 
         if should_message:
-            msg.reply_text(chatmute_text, parse_mode=ParseMode.HTML)
-
-def notification_welc(update: Update, context: CallbackContext, user_id, should_message=True):
-    chat = update.effective_chat  # type: Optional[Chat]
-    msg = update.effective_message  # type: Optional[Message]
-    user = update.effective_user  # type: Optional[User]
-    
-    if msg.new_chat_members:
-        new_members = update.effective_message.new_chat_members
-        for mem in new_members:
-            user_r = sql.get_gmuted_user(mem.id)
-            
-            welc_gmute = "User {} is currently globally muted and is removed from {} with an " \
-                        "immediate effect.".format(mention_html(mem.id, mem.first_name or "Deleted Account"), 
-                                                                chat.title)
-            if sql.is_user_gmuted(mem.id):
-                if user_r.reason:
-                    welc_gmute += "\n<b>Reason</b>: {}".format(user_r.reason)
-                        
-                if should_message:
-                    msg.reply_text(welc_gmute, parse_mode=ParseMode.HTML)
+            if msg.text:
+                msg.reply_text(chatmute_text, parse_mode=ParseMode.HTML)
+            else:
+                context.bot.send_message(chat.id, 
+                                         chatmute_text, parse_mode=ParseMode.HTML)
 
 def check_and_mute(update, context, user_id):
     chat = update.effective_chat  # type: Optional[Chat]
@@ -739,14 +723,21 @@ def enforce_gmute(update: Update, context: CallbackContext):
                 check_and_mute(update, context, user.id)
                 
                 if gmute_alert:
-                    notification1(update, context, user.id,
+                    gmute_notification(update, context, user.id,
                                   should_message=True)
                 
+        elif msg.new_chat_members:
+            for mem in new_members:
+                welcome_gmute(update, context, mem.id)
+                if gmute_alert:
+                    gmute_notification(update, context, mem.id,
+                                  should_message=True)
+                    
         elif new_members:
             for mem in new_members:
                 welcome_gmute(update, context, mem.id)
                 if gmute_alert:
-                    notification1(update, context, user.id,
+                    gmute_notification(update, context, user.id,
                                   should_message=True)
                 
 
