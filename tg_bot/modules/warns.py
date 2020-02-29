@@ -37,6 +37,9 @@ def warn(user: User, chat: Chat, reason: str, message: Message, warner: User = N
     else:
         warner_tag = "Automated warn filter."
 
+    keyboard = InlineKeyboardMarkup(
+        [[InlineKeyboardButton("Remove warn (admin only)", callback_data="rm_warn({})".format(user.id))]])
+    
     limit, soft_warn, warn_mode = sql.get_warn_setting(chat.id)
     num_warns, reasons = sql.warn_user(user.id, chat.id, reason)
     num = 1

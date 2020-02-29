@@ -31,7 +31,7 @@ def blacklist(update: Update, context: CallbackContext):
 
     filter_list = BASE_BLACKLIST_STRING
 
-    if len(args) > 0 and args[1].lower() == 'copy':
+    if len(args) > 1 and args[1].lower() == 'copy':
         for trigger in all_blacklisted:
             filter_list += "<code>{}</code>\n".format(html.escape(trigger))
     else:
