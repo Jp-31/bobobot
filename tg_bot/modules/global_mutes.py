@@ -4,7 +4,7 @@ from typing import Optional, List
 
 from telegram import Message, Update, Bot, User, Chat, ParseMode, InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
 from telegram.error import BadRequest, TelegramError
-from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, CallbackContext
+from telegram.ext import run_async, MessageHandler, Filters, CallbackContext
 from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.global_mutes_sql as sql
@@ -14,8 +14,9 @@ from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
 from tg_bot.modules.helper_funcs.filters import CustomFilters
 from tg_bot.modules.sql.users_sql import get_all_chats, get_users_by_chat, get_name_by_userid
+from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 
-GMUTE_ENFORCE_GROUP = 6
+GMUTE_ENFORCE_GROUP = 8
 
 MUTE_PERMISSIONS = ChatPermissions(can_send_messages=False)
 
@@ -669,7 +670,7 @@ def gmutelist(update: Update, context: CallbackContext):
                                                 caption="Here is the list of currently gmuted users.")
 
 
-def notification1(update: Update, context: CallbackContext, user_id, should_message=True):
+def notification1(update: Update, context: CallbackContext, user_id, should_message=False):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message  # type: Optional[Message]
     user = context.bot.get_chat(user_id)
@@ -711,13 +712,6 @@ def check_and_mute(update, context, user_id):
     msg = update.effective_message
        
     if sql.is_user_gmuted(user_id):
-        try:
-            msg.delete()
-        except BadRequest as excp:
-            if excp.message == "Message to delete not found":
-                                pass
-        else:
-            LOGGER.exception("ERROR in lockables")
         context.bot.restrict_chat_member(update.effective_chat.id, int(user_id), MUTE_PERMISSIONS)
 
 def welcome_gmute(update, context, user_id):
@@ -726,7 +720,6 @@ def welcome_gmute(update, context, user_id):
            
     if sql.is_user_gmuted(user_id):
         context.bot.restrict_chat_member(update.effective_chat.id, int(user_id), MUTE_PERMISSIONS)
-        msg.delete()
 
 @run_async
 def enforce_gmute(update: Update, context: CallbackContext):
@@ -736,6 +729,7 @@ def enforce_gmute(update: Update, context: CallbackContext):
         chat = update.effective_chat  # type: Optional[Chat]
         msg = update.effective_message  # type: Optional[Message]
         gmute_alert = sql.get_gmute_alert(chat.id)
+        new_members = update.effective_message.new_chat_members
 
         if user and not is_user_admin(chat, user.id):
             check_and_mute(update, context, user.id)
@@ -874,21 +868,21 @@ You can disable the Global mutes by `/gmutestat off` or enable `/gmutestat on`.
 
 __mod_name__ = "Global Mutes"
 
-GMUTE_HANDLER = CommandHandler(CMD_PREFIX, "gmute", gmute,
+GMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "gmute", gmute,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
-FMUTE_HANDLER = CommandHandler(CMD_PREFIX, "fmute", fmute,
+FMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "fmute", fmute,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter
                               | CustomFilters.super_admins_filter)
-UNFMUTE_HANDLER = CommandHandler(CMD_PREFIX, "unfmute", unfmute,
+UNFMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "unfmute", unfmute,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter 
                               | CustomFilters.super_admins_filter)
-UNGMUTE_HANDLER = CommandHandler(CMD_PREFIX, "ungmute", ungmute,
+UNGMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "ungmute", ungmute,
                                 filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
-GMUTE_LIST = CommandHandler(CMD_PREFIX, "gmutelist", gmutelist,
+GMUTE_LIST = CustomCommandHandler(CMD_PREFIX, "gmutelist", gmutelist,
                            filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
                            
-GMUTE_STATUS = CommandHandler(CMD_PREFIX, "gmutestat", gmutestat, filters=Filters.group)
-GMUTE_ALERT = CommandHandler(CMD_PREFIX, "gmutealert", gmutealert, filters=Filters.group)
+GMUTE_STATUS = CustomCommandHandler(CMD_PREFIX, "gmutestat", gmutestat, filters=Filters.group)
+GMUTE_ALERT = CustomCommandHandler(CMD_PREFIX, "gmutealert", gmutealert, filters=Filters.group)
 
 GMUTE_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_gmute)
 
