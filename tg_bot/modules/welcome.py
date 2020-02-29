@@ -108,8 +108,14 @@ def new_member(update: Update, context: CallbackContext):
     should_welc, cust_welcome, welc_type = sql.get_welc_pref(chat.id)
     cust_welcome = markdown_to_html(cust_welcome)
     welc_mutes = sql.welcome_mutes(chat.id)
-    user_id = user.id
-    human_checks = sql.get_human_checks(user_id, chat.id)
+    human_checks = sql.get_human_checks(user.id, chat.id)
+    
+    try:
+        for mem in msg.new_chat_members:
+            user_id = mem.id
+    except:
+        LOGGER.log("User being added or no ID found for user.")
+        
     gban_checks = get_gbanned_user(user_id)
 
     if should_welc:
