@@ -685,9 +685,9 @@ def gmute_notification(update: Update, context: CallbackContext, user_id, should
             chatmute_text += "\n<b>Reason</b>: {}".format(user_r.reason)
                 
         if should_message:
-            if msg.text:
+            try:
                 msg.reply_text(chatmute_text, parse_mode=ParseMode.HTML)
-            else:
+            except:
                 context.bot.send_message(chat.id, 
                                          chatmute_text, parse_mode=ParseMode.HTML)
 

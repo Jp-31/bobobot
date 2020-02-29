@@ -679,9 +679,9 @@ def gban_notification(update: Update, context: CallbackContext, user_info, shoul
             chatban_text += "\n<b>Reason</b>: {}".format(user_r.reason)
                 
         if should_message:
-            if msg.text:
+            try:
                 msg.reply_text(chatban_text, parse_mode=ParseMode.HTML)
-            else:
+            except:
                 context.bot.send_message(chat.id, 
                                             chatban_text, parse_mode=ParseMode.HTML)
 
