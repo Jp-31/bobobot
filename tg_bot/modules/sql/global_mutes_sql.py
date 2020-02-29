@@ -146,7 +146,7 @@ def get_gmute_alert(chat_id):
             SESSION.close()
             return None
         SESSION.close()
-        return gmute_alert
+        return gmute_alert.gmute_alert
         
 
 def enable_gmutes(chat_id):
@@ -201,7 +201,7 @@ def __load_gmute_stat_list():
 def __load_gmute_alert_list():
     global GMUTEALERT_LIST
     try:
-        GMUTEALERT_LIST = {x.chat_id for x in SESSION.query(GmuteSettings).all() if not x.setting}
+        GMUTEALERT_LIST = {x.chat_id for x in SESSION.query(GmuteSettings).all() if not x.gmute_alert}
     finally:
         SESSION.close()
 

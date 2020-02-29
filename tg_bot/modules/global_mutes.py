@@ -693,24 +693,24 @@ def notification_welc(update: Update, context: CallbackContext, user_id, should_
     user = update.effective_user  # type: Optional[User]
     
     if msg.new_chat_members:
-                new_members = update.effective_message.new_chat_members
-                for mem in new_members:
-                    user_r = sql.get_gmuted_user(mem.id)
-                    
-                    welc_gmute = "User {} is currently globally muted and is removed from {} with an " \
-                                "immediate effect.".format(mention_html(mem.id, mem.first_name or "Deleted Account"), 
-                                                                        chat.title)
-                    if sql.is_user_gmuted(mem.id):
-                        if user_r.reason:
-                            welc_gmute += "\n<b>Reason</b>: {}".format(user_r.reason)
-                                
-                        if should_message:
-                            msg.reply_text(welc_gmute, parse_mode=ParseMode.HTML)
+        new_members = update.effective_message.new_chat_members
+        for mem in new_members:
+            user_r = sql.get_gmuted_user(mem.id)
+            
+            welc_gmute = "User {} is currently globally muted and is removed from {} with an " \
+                        "immediate effect.".format(mention_html(mem.id, mem.first_name or "Deleted Account"), 
+                                                                chat.title)
+            if sql.is_user_gmuted(mem.id):
+                if user_r.reason:
+                    welc_gmute += "\n<b>Reason</b>: {}".format(user_r.reason)
+                        
+                if should_message:
+                    msg.reply_text(welc_gmute, parse_mode=ParseMode.HTML)
 
 def check_and_mute(update, context, user_id):
     chat = update.effective_chat  # type: Optional[Chat]
     msg = update.effective_message
-       
+    
     if sql.is_user_gmuted(user_id):
         context.bot.restrict_chat_member(update.effective_chat.id, int(user_id), MUTE_PERMISSIONS)
 
@@ -733,32 +733,22 @@ def enforce_gmute(update: Update, context: CallbackContext):
 
         if user and not is_user_admin(chat, user.id):
             check_and_mute(update, context, user.id)
-        
-        if not gmute_alert:
-            if msg.new_chat_members:
-                new_members = update.effective_message.new_chat_members
-        if msg.reply_to_message:
-                for mem in new_members:
-                    notification_welc(update, context, mem.id)
-                    welcome_gmute(update, context, mem.id)
-
             
-        if msg.reply_to_message:
-            user = msg.reply_to_message.from_user  # type: Optional[User]
+        if msg.text:
             if user and not is_user_admin(chat, user.id):
-                notification1(update, context, user.id, should_message=False)
                 check_and_mute(update, context, user.id)
-        else:
-            if msg.new_chat_members:
-                new_members = update.effective_message.new_chat_members
-                for mem in new_members:
-                    welcome_gmute(update, context, mem.id)
-
-            
-            if msg.reply_to_message:
-                user = msg.reply_to_message.from_user  # type: Optional[User]
-                if user and not is_user_admin(chat, user.id):
-                    check_and_mute(update, context, user.id)
+                
+                if gmute_alert:
+                    notification1(update, context, user.id,
+                                  should_message=True)
+                
+        elif new_members:
+            for mem in new_members:
+                welcome_gmute(update, context, mem.id)
+                if gmute_alert:
+                    notification1(update, context, user.id,
+                                  should_message=True)
+                
 
 @run_async
 @user_admin
@@ -773,11 +763,11 @@ def gmutealert(update: Update, context: CallbackContext):
         
     if len(args) > 1:
         if args_option != "" and args_option in ["on", "yes"]:
-            sql.disable_alert(chat.id)
+            sql.enable_alert(chat.id)
             update.effective_message.reply_text("Global mute notification is <code>enabled</code> for {}.".format(chat.title),
                                                  parse_mode=ParseMode.HTML)
         elif args_option != "" and args_option in ["off", "no"]:
-            sql.enable_alert(chat.id)
+            sql.disable_alert(chat.id)
             update.effective_message.reply_text("Global mute notification is <code>disabled</code> for {}.".format(chat.title),
                                                  parse_mode=ParseMode.HTML)
         else:
