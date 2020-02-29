@@ -151,7 +151,7 @@ def get_gban_alert(chat_id):
             SESSION.close()
             return None
         SESSION.close()
-        return gban_alert
+        return gban_alert.gban_alert
         
 
 def enable_gbans(chat_id):
@@ -233,7 +233,7 @@ def __load_gban_stat_list():
 def __load_gban_alert_list():
     global GBANALERT_LIST
     try:
-        GBANALERT_LIST = {x.chat_id for x in SESSION.query(GbanSettings).all() if not x.setting}
+        GBANALERT_LIST = {x.chat_id for x in SESSION.query(GbanSettings).all() if not x.gban_alert}
     finally:
         SESSION.close()
 
