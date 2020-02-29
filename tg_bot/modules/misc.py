@@ -517,8 +517,7 @@ def get_id(update: Update, context: CallbackContext):
 def info(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     user = update.effective_user  # type: Optional[User]
-    nick = sql.get_user_nick(user.id)
-
+    
     args = msg.text.split(" ")
     
     user_id = extract_user(update.effective_message, args)
@@ -538,7 +537,7 @@ def info(update: Update, context: CallbackContext):
 
     else:
         return
-            
+    nick = sql.get_user_nick(user_id)
     text = "<b>User info</b>:" \
            "\nID: <code>{}</code>" \
            "\nFirst Name: {}".format(user.id, html.escape(user.first_name))
