@@ -115,13 +115,14 @@ def user_admin(func):
     @wraps(func)
     def is_admin(update: Update, context: CallbackContext, *args, **kwargs):
         user = update.effective_user  # type: Optional[User]
+        message = update.effective_message
         if user and is_user_admin(update.effective_chat, user.id):
             return func(update, context, *args, **kwargs)
 
         elif not user:
             pass
 
-        elif DEL_CMDS and " " not in update.effective_message.text:
+        elif DEL_CMDS and message.text != None and " " not in message.text:
             update.effective_message.delete()
 
         else:
@@ -137,14 +138,15 @@ def user_admin_no_reply(func):
     @wraps(func)
     def is_admin(update: Update, context: CallbackContext, *args, **kwargs):
         user = update.effective_user  # type: Optional[User]
+        message = update.effective_message
         if user and is_user_admin(update.effective_chat, user.id):
             return func(update, context, *args, **kwargs)
 
         elif not user:
             pass
 
-        elif DEL_CMDS and " " not in update.effective_message.text:
-            update.effective_message.delete()
+        elif DEL_CMDS and message.text != None and " " not in message.text:
+            message.delete()
 
     return is_admin
 
