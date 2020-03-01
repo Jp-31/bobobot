@@ -37,30 +37,41 @@ def welcome_spamwatch_ban(update: Update, context: CallbackContext, user_id):
 
 @run_async
 def enforce_spamwatch_ban(update: Update, context: CallbackContext):
-    user = update.effective_user  # type: Optional[User]
-    chat = update.effective_chat  # type: Optional[Chat]
-    msg = update.effective_message  # type: Optional[Message]
-    
-    spamwatch_text = "No reason given."
-    
-    if msg.new_chat_members:
+    if sql.does_chat_spamwatch(update.effective_chat.id) and update.effective_chat.get_member(context.bot.id).can_restrict_members:
+        user = update.effective_user  # type: Optional[User]
+        chat = update.effective_chat  # type: Optional[Chat]
+        msg = update.effective_message  # type: Optional[Message]
+        #spamwatch_alert = sql.get_spamwatch_alert(chat.id)
         new_members = update.effective_message.new_chat_members
-        for mem in new_members:
-            welcome_spamwatch_ban(update, context, mem.id)
-    
-    is_banned = client.get_ban(user.id)
-    
-    if is_banned:
-        if is_banned.reason:
-            spamwatch_text = is_banned.reason
-
-        spam_ban(update, context, user.id, is_banned.reason)
         
+        is_banned = client.get_ban(user.id)
+
+        if user and not is_user_admin(chat, user.id):
+            if is_banned:
+                if is_banned.reason:
+                    spamwatch_text = is_banned.reason
+
+                spam_ban(update, context, user.id, is_banned.reason)
+
+        if msg.text:
+            if user and not is_user_admin(chat, user.id):
+                if is_banned:
+                    if is_banned.reason:
+                        spamwatch_text = is_banned.reason
+
+                    spam_ban(update, context, user.id, is_banned.reason)
+
+        elif msg.new_chat_members:
+            for mem in new_members:
+                welcome_spamwatch_ban(update, context, mem.id)
+
+        elif new_members:
+            for mem in new_members:
+                welcome_spamwatch_ban(update, context, mem.id)
 
 @run_async
 @bot_admin
 @can_restrict
-@user_admin
 def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
@@ -94,7 +105,6 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
 @run_async
 @bot_admin
 @can_restrict
-@user_admin
 def spam_ban_join(update: Update, context: CallbackContext, user_id, reason) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
