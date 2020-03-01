@@ -20,11 +20,9 @@ def shout(update: Update, context: CallbackContext):
         result[0] = text[0]
         result = "".join(result)
         msg = "```\n" + result + "```"
+        return update.effective_message.reply_text(msg, parse_mode="MARKDOWN")
     except:
-        msg = "Send me a word to use for shout."
-        LOGGER.log(2, "No argument given for shout.")
-    
-    return update.effective_message.reply_text(msg, parse_mode="MARKDOWN")
+        LOGGER.log(2, "No argument given for shout or not enough permissions.")
     
 __help__ = """
  A little piece of fun wording! Give a loud shout out in the chatroom.

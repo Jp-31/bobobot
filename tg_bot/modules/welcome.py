@@ -13,7 +13,7 @@ import tg_bot.modules.sql.welcome_sql as sql
 from tg_bot.modules.sql.global_bans_sql import get_gbanned_user
 from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX, SPAMWATCH_TOKEN
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
-from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin
+from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin, can_restrict
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_welcome_type
 from tg_bot.modules.helper_funcs.string_handling import markdown_parser, \
@@ -606,6 +606,7 @@ def delete_join(update: Update, context: CallbackContext):
             update.message.delete()
             
 @run_async
+@can_restrict
 def user_button(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
