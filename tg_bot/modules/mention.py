@@ -48,9 +48,14 @@ def ping_list(update: Update, context: CallbackContext):
                         user.user.first_name = "Deleted Account"
                     entry = " {},".format(mention_html(user.user.id, user.user.first_name))
                     if num%10 == 0:
-                        update.effective_message.reply_text(ping_list.format(mention_html(msg_user.id, 
-                                                            msg_user.first_name), chat_name), 
-                                                            parse_mode=telegram.ParseMode.HTML)
+                        try:
+                            update.effective_message.reply_text(ping_list.format(mention_html(msg_user.id, 
+                                                                msg_user.first_name), chat_name), 
+                                                                parse_mode=telegram.ParseMode.HTML)
+
+                        except:
+                            LOGGER.warning("Failed to send ping message.")
+
                         ping_list = entry
                     else:
                         ping_list += entry

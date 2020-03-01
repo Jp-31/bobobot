@@ -699,7 +699,10 @@ def welcome_gban(update, context, user_id):
            
     if sql.is_user_gbanned(user_id):
         chat.kick_member(user_id)
-        msg.delete()
+        try:
+            msg.delete()
+        except:
+            LOGGER.warning("Could not find the message to delete.", exc_info=1)
 
 @run_async
 def enforce_gban(update: Update, context: CallbackContext):

@@ -54,7 +54,7 @@ USER_PERMISSIONS_UNMUTE = ChatPermissions(can_send_messages=True,
                                     can_send_other_messages=True, 
                                     can_add_web_page_previews=True)
 # do not async
-def send(update, message, keyboard, backup_message):
+def send(update, context, message, keyboard, backup_message):
     try:
         msg = update.effective_message.reply_text(message, parse_mode=ParseMode.HTML, reply_markup=keyboard)
     except IndexError:
@@ -90,7 +90,7 @@ def send(update, message, keyboard, backup_message):
             LOGGER.warning(keyboard)
             LOGGER.exception("Could not parse! got invalid url host errors")
         else:
-            msg = update.effective_message.reply_text(markdown_parser(backup_message +
+            msg = context.bot.send_message(update.effective_chat.id, markdown_parser(backup_message +
                                                                       "\nNote: An error occured when sending the "
                                                                       "custom message. Please update."),
                                                       parse_mode=ParseMode.MARKDOWN)
@@ -176,7 +176,7 @@ def new_member(update: Update, context: CallbackContext):
 
                 keyboard = InlineKeyboardMarkup(keyb)
 
-                sent = send(update, res, keyboard,
+                sent = send(update, context, res, keyboard,
                             sql.DEFAULT_WELCOME.format(first=first_name))  # type: Optional[Message]
                 #User exception from mutes:
                 if is_user_ban_protected(chat, new_mem.id, chat.get_member(new_mem.id)) or human_checks or gban_checks:
@@ -276,7 +276,7 @@ def left_member(update: Update, context: CallbackContext):
 
             keyboard = InlineKeyboardMarkup(keyb)
 
-            send(update, res, keyboard, sql.DEFAULT_GOODBYE)
+            send(update, context, res, keyboard, sql.DEFAULT_GOODBYE)
 
 
 @run_async
@@ -307,7 +307,7 @@ def welcome(update: Update, context: CallbackContext):
                 keyb = build_keyboard(buttons)
                 keyboard = InlineKeyboardMarkup(keyb)
 
-                send(update, welcome_m, keyboard, sql.DEFAULT_WELCOME)
+                send(update, context, welcome_m, keyboard, sql.DEFAULT_WELCOME)
 
         else:
             if noformat:
@@ -357,7 +357,7 @@ def goodbye(update: Update, context: CallbackContext):
                 keyb = build_keyboard(buttons)
                 keyboard = InlineKeyboardMarkup(keyb)
 
-                send(update, goodbye_m, keyboard, sql.DEFAULT_GOODBYE)
+                send(update, context, goodbye_m, keyboard, sql.DEFAULT_GOODBYE)
 
         else:
             if noformat:

@@ -5,7 +5,7 @@ from typing import Optional
 from telegram import User, Chat, ChatMember, Update, Bot
 from telegram.ext import CallbackContext
 
-from tg_bot import DEL_CMDS, iSUDO_USERS, SUDO_USERS, WHITELIST_USERS, SUPER_ADMINS
+from tg_bot import DEL_CMDS, iSUDO_USERS, SUDO_USERS, WHITELIST_USERS, SUPER_ADMINS, LOGGER
 
 
 def can_delete(chat: Chat, bot_id: int) -> bool:
@@ -107,7 +107,10 @@ def bot_admin(func):
         if is_bot_admin(update.effective_chat, context.bot.id):
             return func(update, context, *args, **kwargs)
         else:
-            update.effective_message.reply_text("I'm not admin!")
+            try:
+                update.effective_message.reply_text("I'm not admin!")
+            except:
+                LOGGER.log(2, "Reply message not found.")
 
     return is_admin
 
@@ -126,9 +129,12 @@ def user_admin(func):
             update.effective_message.delete()
 
         else:
-            msg = update.effective_message.reply_text("Who dis non-admin telling me what to do?")
-            time.sleep(5)
-            msg.delete()
+            try:
+                msg = update.effective_message.reply_text("Who dis non-admin telling me what to do?")
+                time.sleep(5)
+                msg.delete()
+            except:
+                LOGGER.log(2, "Reply message not found.")
             
 
     return is_admin
