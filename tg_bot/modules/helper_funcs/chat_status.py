@@ -97,7 +97,7 @@ def can_restrict(func):
             return func(update, context, *args, **kwargs)
         else:
             update.effective_message.reply_text("I can't restrict people here! "
-                                                "Make sure I'm admin and can appoint new admins.")
+                                                "Make sure I'm admin and can restrict members.")
 
     return promote_rights
 

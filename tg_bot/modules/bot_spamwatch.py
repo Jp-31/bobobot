@@ -16,6 +16,7 @@ from tg_bot.modules.helper_funcs.extraction import extract_user
 client = spamwatch.Client(SPAMWATCH_TOKEN) # initialize spamwatch client with the token from the config file
 SPAM_ENFORCE_GROUP = 7
 
+@can_restrict
 def welcome_spamwatch_ban(update: Update, context: CallbackContext, user_id):
     chat = update.effective_chat  # type: Optional[Chat]
     user = context.bot.get_chat(user_id)
@@ -78,7 +79,7 @@ def spam_ban(update: Update, context: CallbackContext, user_id, reason) -> str:
         if excp.message == "Reply message not found":
             # Do not reply
             chat.kick_member(user_id)
-            message.reply_text(reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
+            context.bot.send_message(chat.id, reply, parse_mode=ParseMode.HTML, disable_web_page_preview=True, quote=False)
             return
         else:
             LOGGER.warning(update)

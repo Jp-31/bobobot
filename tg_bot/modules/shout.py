@@ -2,7 +2,7 @@ from telegram import Update, Bot
 from telegram.ext import CallbackContext, CommandHandler, run_async
 
 from tg_bot.modules.disable import DisableAbleCommandHandler
-from tg_bot import dispatcher, CMD_PREFIX
+from tg_bot import dispatcher, CMD_PREFIX, LOGGER
 
 @run_async
 def shout(update: Update, context: CallbackContext):
@@ -16,9 +16,14 @@ def shout(update: Update, context: CallbackContext):
     for pos, symbol in enumerate(text[1:]):
         result.append(symbol + ' ' + '  ' * pos + symbol)
     result = list("\n".join(result))
-    result[0] = text[0]
-    result = "".join(result)
-    msg = "```\n" + result + "```"
+    try:
+        result[0] = text[0]
+        result = "".join(result)
+        msg = "```\n" + result + "```"
+    except:
+        msg = "Send me a word to use for shout."
+        LOGGER.log(2, "No argument given for shout.")
+    
     return update.effective_message.reply_text(msg, parse_mode="MARKDOWN")
     
 __help__ = """

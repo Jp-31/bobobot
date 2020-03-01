@@ -92,7 +92,12 @@ def filters(update: Update, context: CallbackContext):
         is_document = True
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
-        offset = len(msg.reply_to_message.caption)
+        try:
+            offset = len(msg.reply_to_message.caption)
+        except:
+            offset = 0
+            LOGGER.log(2, "Photo has no caption.")
+
         ignore_underscore_case, buttons = button_markdown_parser(msg.reply_to_message.caption, 
                                                                  entities=msg.reply_to_message.parse_entities(), 
                                                                  offset=offset)
