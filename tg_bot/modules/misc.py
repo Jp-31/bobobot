@@ -634,7 +634,8 @@ def get_time(update: Update, context: CallbackContext):
 def msg_save(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     user = update.effective_user  # type: Optional[User]
-    success_pm = msg.reply_to_message.forward(user.id)
+    chat = update.effective_chat
+    success_pm = context.bot.forward_message(user.id, chat.id, msg.message_id)
     saved = msg.reply_text("Successfully saved message!")
     msg.delete()
     try:
