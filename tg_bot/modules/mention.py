@@ -8,7 +8,7 @@ from typing import Optional, List
 
 from telegram import Message, Chat, Update, Bot, ParseMode, User
 from telegram import InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import CommandHandler, RegexHandler, run_async, CallbackContext
+from telegram.ext import CommandHandler, RegexHandler, run_async, CallbackContext, MessageHandler, Filters
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.chat_status import user_admin
@@ -185,8 +185,10 @@ PINGER_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "pingtime", ping_list, ad
 PINGERME_HANDLER = CustomCommandHandler(CMD_PREFIX, "pingme", pingme)
 UNPINGERME_HANDLER = CustomCommandHandler(CMD_PREFIX, "unpingme", unpingme)
 UNPINGERALL_HANDLER = CustomCommandHandler(CMD_PREFIX, "unpingall", unping_all)
+PINGTIME_HANDLER = MessageHandler(Filters.regex(r"@pingtime"), ping_list)
 
 dispatcher.add_handler(PINGER_HANDLER)
+dispatcher.add_handler(PINGTIME_HANDLER)
 dispatcher.add_handler(PINGERME_HANDLER)
 dispatcher.add_handler(UNPINGERME_HANDLER)
 dispatcher.add_handler(UNPINGERALL_HANDLER)

@@ -537,7 +537,6 @@ def info(update: Update, context: CallbackContext):
 
     else:
         return
-    nick = sql.get_user_nick(user_id)
     text = "<b>User info</b>:" \
            "\nID: <code>{}</code>" \
            "\nFirst Name: {}".format(user.id, html.escape(user.first_name))
