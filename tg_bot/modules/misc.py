@@ -520,7 +520,11 @@ def info(update: Update, context: CallbackContext):
     args = msg.text.split(" ")
     
     user_id = extract_user(update.effective_message, args)
-    nick = sql.get_user_nick(user_id)
+    
+    if user_id:
+        nick = sql.get_user_nick(user_id)
+    else:
+        nick = sql.get_user_nick(user.id)
 
     if user_id:
         user = context.bot.get_chat(user_id)
