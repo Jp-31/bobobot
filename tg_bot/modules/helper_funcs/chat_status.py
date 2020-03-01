@@ -11,6 +11,8 @@ from tg_bot import DEL_CMDS, iSUDO_USERS, SUDO_USERS, WHITELIST_USERS, SUPER_ADM
 def can_delete(chat: Chat, bot_id: int) -> bool:
     return chat.get_member(bot_id).can_delete_messages
 
+def bot_send_messages(chat: Chat, bot_id: int) -> bool:
+    return chat.get_member(bot_id).can_send_messages
 
 def is_user_ban_protected(chat: Chat, user_id: int, member: ChatMember = None) -> bool:
     if chat.type == 'private' \
@@ -100,6 +102,21 @@ def can_restrict(func):
                                                 "Make sure I'm admin and can restrict members.")
 
     return promote_rights
+
+def can_message(func):
+    @wraps(func)
+    def send_msg_rights(update: Update, context: CallbackContext, *args, **kwargs):
+        is_muted = bot_send_messages(update.effective_chat, context.bot.id)
+        if (not is_muted or is_muted == True) and is_muted != False:
+            return func(update, context, *args, **kwargs)
+        else:
+            try:
+                context.bot.leave_chat(int(update.effective_chat.id))
+                LOGGER.log(2, "Left a group where I was muted.")
+            except telegram.TelegramError:
+                LOGGER.log(2, "Could not leave chat.")
+        
+    return send_msg_rights
 
 def bot_admin(func):
     @wraps(func)

@@ -13,7 +13,7 @@ import tg_bot.modules.sql.welcome_sql as sql
 from tg_bot.modules.sql.global_bans_sql import get_gbanned_user
 from tg_bot import dispatcher, OWNER_ID, LOGGER, CMD_PREFIX, SPAMWATCH_TOKEN
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
-from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin, can_restrict
+from tg_bot.modules.helper_funcs.chat_status import user_admin, can_delete, is_user_ban_protected, is_user_admin, can_restrict, can_message
 from tg_bot.modules.helper_funcs.misc import build_keyboard, revert_buttons
 from tg_bot.modules.helper_funcs.msg_types import get_welcome_type
 from tg_bot.modules.helper_funcs.string_handling import markdown_parser, \
@@ -54,6 +54,7 @@ USER_PERMISSIONS_UNMUTE = ChatPermissions(can_send_messages=True,
                                     can_send_other_messages=True, 
                                     can_add_web_page_previews=True)
 # do not async
+@can_message
 def send(update, context, message, keyboard, backup_message):
     try:
         msg = update.effective_message.reply_text(message, parse_mode=ParseMode.HTML, reply_markup=keyboard)
