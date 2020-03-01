@@ -127,18 +127,22 @@ def test(update: Update, context: CallbackContext):
 def start(update: Update, context: CallbackContext):
     args = update.effective_message.text.split(" ")
     if update.effective_chat.type == "private":
-        if len(args) >= 1:
+        if len(args) > 1:
             if args[1].lower() == "help":
                 send_help(update.effective_chat.id, HELP_STRINGS)
 
             elif args[1].lower().startswith("stngs_"):
                 match = re.match("stngs_(.*)", args[1].lower())
-                chat = dispatcher.bot.getChat(match.group(1))
-
-                if is_user_admin(chat, update.effective_user.id):
-                    send_settings(match.group(1), update.effective_user.id, False)
-                else:
-                    send_settings(match.group(1), update.effective_user.id, True)
+                try:
+                    chat = dispatcher.bot.getChat(match.group(1))
+                    if chat and is_user_admin(chat, update.effective_user.id):
+                        send_settings(match.group(
+                            1), update.effective_user.id, False)
+                    else:
+                        send_settings(match.group(
+                            1), update.effective_user.id, True)
+                except:
+                    context.bot.send_message(update.effective_chat.id, "Add a chat id after stngs_", parse_mode=ParseMode.HTML)
 
             elif args[1][1:].isdigit() and "rules" in IMPORTED:
                 IMPORTED["rules"].send_rules(update, args[1], from_pm=True)
