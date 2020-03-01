@@ -16,6 +16,7 @@ from tg_bot.modules.helper_funcs.extraction import extract_user
 client = spamwatch.Client(SPAMWATCH_TOKEN) # initialize spamwatch client with the token from the config file
 SPAM_ENFORCE_GROUP = 7
 
+@run_async
 @bot_admin
 @can_restrict
 def welcome_spamwatch_ban(update: Update, context: CallbackContext, user_id):
