@@ -11,7 +11,7 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import CommandHandler, RegexHandler, run_async, CallbackContext, MessageHandler, Filters
 from tg_bot.modules.disable import DisableAbleCommandHandler
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
-from tg_bot.modules.helper_funcs.chat_status import user_admin
+from tg_bot.modules.helper_funcs.chat_status import user_admin, can_message
 from telegram.utils.helpers import mention_html
 
 from tg_bot import dispatcher, LOGGER, CMD_PREFIX
@@ -19,6 +19,7 @@ from tg_bot import dispatcher, LOGGER, CMD_PREFIX
 PING_STRING = "<b>{} pinged users for {}:</b>\n"
 
 @run_async
+@can_message
 def ping_list(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     msg_user = update.effective_user # Not called user as it will give issues later on.

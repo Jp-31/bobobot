@@ -95,12 +95,13 @@ def send(update, context, message, keyboard, backup_message):
                                                                       "\nNote: An error occured when sending the "
                                                                       "custom message. Please update."),
                                                       parse_mode=ParseMode.MARKDOWN)
-            LOGGER.exception()
+            LOGGER.exception("Couldn't send a welcome message: {}".format(excp))
 
     return msg
 
 
 @run_async
+@can_message
 def new_member(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
@@ -603,7 +604,10 @@ def delete_join(update: Update, context: CallbackContext):
     if can_delete(chat, context.bot.id):
         del_join = sql.get_del_pref(chat.id)
         if del_join:
-            update.message.delete()
+            try:
+                update.message.delete()
+            except:
+                LOGGER.log(2, "Could not delete join message. Line: 609")
             
 @run_async
 @can_restrict
