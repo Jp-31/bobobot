@@ -703,7 +703,7 @@ def welcome_gban(update, context, user_id):
             if msg:
                 msg.delete()
         except:
-            LOGGER.warning("Could not find the message to delete.", exc_info=1)
+            LOGGER.log(2, "Could not find the message to delete.")
 
 @run_async
 def enforce_gban(update: Update, context: CallbackContext):
