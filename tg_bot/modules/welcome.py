@@ -125,6 +125,7 @@ def new_member(update: Update, context: CallbackContext):
         new_members = update.effective_message.new_chat_members
         for new_mem in new_members:
             spamwatch_banned = client.get_ban(new_mem.id)
+            agg = "Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, new_mem.id)
             # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
@@ -197,9 +198,7 @@ def new_member(update: Update, context: CallbackContext):
                 
                 #Join welcome: aggressive mute
                 elif welc_mutes == "aggressive":
-                    agg = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
-                                                                                                        new_mem.id),
-                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
+                    msg.reply_text(agg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
                     context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
             delete_join(update, context)
