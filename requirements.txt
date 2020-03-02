@@ -11,4 +11,5 @@ Pillow>=4.2.0
 alphabet_detector
 bleach
 markdown2
+spamwatch
 regex

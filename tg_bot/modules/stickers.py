@@ -38,16 +38,12 @@ def getsticker(update: Update, context: CallbackContext):
         file_id = msg.reply_to_message.sticker.file_id
         file = context.bot.get_file(file_id).download_as_bytearray()
         new_file = BytesIO(file)
-        #newFile.download('sticker.png')
         context.bot.send_document(chat_id, new_file, filename="sticker.png")
-        #os.remove("sticker.png")
     elif msg.reply_to_message and msg.reply_to_message.sticker and msg.reply_to_message.sticker.is_animated == True:
         file_id = msg.reply_to_message.sticker.file_id
         file = context.bot.get_file(file_id).download_as_bytearray()
         new_file = BytesIO(file)
-        #newFile.download('sticker.png')
         context.bot.send_document(chat_id, new_file, filename="sticker.TGS")
-        #os.remove("sticker.png")
     else:
         update.effective_message.reply_text(
             "Please reply to a sticker for me to upload its PNG.")
