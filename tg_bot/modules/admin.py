@@ -147,7 +147,7 @@ def pin(update: Update, context: CallbackContext) -> str:
     prev_message = update.effective_message.reply_to_message
 
     is_silent = True
-    if len(args) >= 1:
+    if len(args) > 1:
         is_silent = not (args[1].lower() == 'notify' or args[1].lower() == 'loud' or args[1].lower() == 'violent')
 
     if prev_message and is_group:
