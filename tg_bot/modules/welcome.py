@@ -95,12 +95,13 @@ def send(update, context, message, keyboard, backup_message):
                                                                       "\nNote: An error occured when sending the "
                                                                       "custom message. Please update."),
                                                       parse_mode=ParseMode.MARKDOWN)
-            LOGGER.exception()
+            LOGGER.exception("Couldn't send a welcome message: {}".format(excp))
 
     return msg
 
 
 @run_async
+@can_message
 def new_member(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]

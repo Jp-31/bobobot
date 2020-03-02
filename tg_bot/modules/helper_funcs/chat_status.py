@@ -98,8 +98,11 @@ def can_restrict(func):
         if update.effective_chat.get_member(context.bot.id).can_restrict_members:
             return func(update, context, *args, **kwargs)
         else:
-            update.effective_message.reply_text("I can't restrict people here! "
-                                                "Make sure I'm admin and can restrict members.")
+            try:
+                update.effective_message.reply_text("I can't restrict people here! "
+                                                    "Make sure I'm admin and can restrict members.")
+            except:
+                LOGGER.log(2, "Cannot send messages: Chat ID {}".format(str(update.effective_chat.id)))
 
     return promote_rights
 
