@@ -17,6 +17,7 @@ from tg_bot import dispatcher, OWNER_ID, iSUDO_USERS, SUDO_USERS, SUPPORT_USERS,
 from tg_bot.__main__ import GDPR
 from tg_bot.__main__ import STATS, USER_INFO
 from tg_bot.modules.disable import DisableAbleCommandHandler, DisableAbleRegexHandler
+from tg_bot.modules.helper_funcs.chat_status import can_message
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from tg_bot.modules.helper_funcs.extraction import extract_user
 from tg_bot.modules.helper_funcs.filters import CustomFilters
@@ -339,6 +340,7 @@ def greet(update: Update, context: CallbackContext):
     update.effective_message.reply_text(random.choice(GREETING))
 
 @run_async
+@can_message
 def runs(update: Update, context: CallbackContext):
     update.effective_message.reply_text(random.choice(RUN_STRINGS))
 
@@ -360,6 +362,7 @@ def firstmsg(update: Update, context: CallbackContext):
 
 
 @run_async
+@can_message
 def slap(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     args= update.effective_message.text.split(" ")
@@ -398,6 +401,7 @@ def slap(update: Update, context: CallbackContext):
     reply_text(repl, parse_mode=ParseMode.MARKDOWN)
 
 @run_async
+@can_message
 def punch(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     args = msg.text.split(" ")
@@ -437,6 +441,7 @@ def punch(update: Update, context: CallbackContext):
 
 
 @run_async
+@can_message
 def hug(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     args = msg.text.split(" ")
