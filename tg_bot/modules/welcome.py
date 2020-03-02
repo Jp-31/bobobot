@@ -605,7 +605,10 @@ def delete_join(update: Update, context: CallbackContext):
     if can_delete(chat, context.bot.id):
         del_join = sql.get_del_pref(chat.id)
         if del_join:
-            update.message.delete()
+            try:
+                update.message.delete()
+            except:
+                LOGGER.log(2, "Could not delete join message. Line: 609")
             
 @run_async
 @can_restrict
