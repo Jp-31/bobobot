@@ -1,3 +1,5 @@
+import emoji
+import regex
 import hashlib
 import os
 import math
@@ -32,20 +34,29 @@ def stickerid(update: Update, context: CallbackContext):
 def getsticker(update: Update, context: CallbackContext):
     msg = update.effective_message
     chat_id = update.effective_chat.id
-    if msg.reply_to_message and msg.reply_to_message.sticker:
+    if msg.reply_to_message and msg.reply_to_message.sticker and msg.reply_to_message.sticker.is_animated == False:
         file_id = msg.reply_to_message.sticker.file_id
-        newFile = context.bot.get_file(file_id)
-        newFile.download('sticker.png')
-        context.bot.send_document(chat_id, document=open('sticker.png', 'rb'))
-        os.remove("sticker.png")
+        file = context.bot.get_file(file_id).download_as_bytearray()
+        new_file = BytesIO(file)
+        #newFile.download('sticker.png')
+        context.bot.send_document(chat_id, new_file, filename="sticker.png")
+        #os.remove("sticker.png")
+    elif msg.reply_to_message and msg.reply_to_message.sticker and msg.reply_to_message.sticker.is_animated == True:
+        file_id = msg.reply_to_message.sticker.file_id
+        file = context.bot.get_file(file_id).download_as_bytearray()
+        new_file = BytesIO(file)
+        #newFile.download('sticker.png')
+        context.bot.send_document(chat_id, new_file, filename="sticker.TGS")
+        #os.remove("sticker.png")
     else:
-        update.effective_message.reply_text("Please reply to a sticker for me to upload its PNG.")
-
+        update.effective_message.reply_text(
+            "Please reply to a sticker for me to upload its PNG.")
 
 @run_async
 def kang(update: Update, context: CallbackContext):
     msg = update.effective_message
     user = update.effective_user
+    args = split_count(msg.text)
     packnum = 0
     packname = "a" + str(user.id) + "_by_"+ context.bot.username
     packname_found = 0
@@ -73,8 +84,8 @@ def kang(update: Update, context: CallbackContext):
             msg.reply_text("Yea, I can't kang that.")
         kang_file = context.bot.get_file(file_id)
         kang_file.download('kangsticker.png')
-        if context.args:
-            sticker_emoji = str(context.args[0])
+        if args:
+            sticker_emoji = str(args[0])
         elif msg.reply_to_message.sticker and msg.reply_to_message.sticker.emoji:
             sticker_emoji = msg.reply_to_message.sticker.emoji
         else:
@@ -126,7 +137,7 @@ def kang(update: Update, context: CallbackContext):
                 msg.reply_text("Sticker successfully added to [pack](t.me/addstickers/%s)" % packname + "\n"
                             "Emoji is:" + " " + sticker_emoji, parse_mode=ParseMode.MARKDOWN)
             print(e)
-    elif context.args:
+    elif args:
         try:
             try:
                 urlemoji = msg.text.split(" ")
@@ -196,6 +207,15 @@ def kang(update: Update, context: CallbackContext):
     if os.path.isfile("kangsticker.png"):
         os.remove("kangsticker.png")
 
+
+def split_count(text):
+    emoji_list = []
+    data = regex.findall(r'\X', text)
+    for word in data:
+        if any(char in emoji.UNICODE_EMOJI for char in word):
+            emoji_list.append(word)
+
+    return emoji_list
 
 def makepack_internal(msg, user, png_sticker, emoji, bot, packname, packnum):
     name = user.first_name
