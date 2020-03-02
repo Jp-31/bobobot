@@ -4,28 +4,32 @@ from telegram.ext import CallbackContext, CommandHandler, run_async
 from typing import Optional, List
 
 from tg_bot.modules.disable import DisableAbleCommandHandler
-from tg_bot import dispatcher, CMD_PREFIX
+from tg_bot.modules.helper_funcs.chat_status import can_message
+from tg_bot import dispatcher, CMD_PREFIX, LOGGER
 
 from requests import get
 
 LYRICSINFO = "\n[Full Lyrics](http://lyrics.wikia.com/wiki/%s:%s)"
 
 @run_async
+@can_message
 def lyrics(update: Update, context: CallbackContext):
     message = update.effective_message
     text = message.text[len('/lyrics '):]
-    song = " ".join(context.args).split("- ")
+    args = message.text.split(" ")
+    args = args.remove(args[0])
+    
+    if args and len(args) != 0:
+        song = " ".join(args).split("- ")
+    else:
+        song = ""
+        LOGGER.log(2, "No arguments given.")
+
     reply_text = f'Looks up for lyrics'
     
-    if len(song) == 2:
-        while song[1].startswith(" "):
-            song[1] = song[1][1:]
-        while song[0].startswith(" "):
-            song[0] = song[0][1:]
-        while song[1].endswith(" "):
-            song[1] = song[1][:-1]
-        while song[0].endswith(" "):
-            song[0] = song[0][:-1]
+    if len(song) == 3:
+        song[1].strip()
+        song[2].strip()
         try:
             lyrics = "\n".join(PyLyrics.getLyrics(
                 song[0], song[1]).split("\n")[:20])
