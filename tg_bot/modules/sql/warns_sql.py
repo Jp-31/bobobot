@@ -83,14 +83,14 @@ def warn_user(user_id, chat_id, reason=None):
 
         warned_user.num_warns += 1
         
-        if reason is "":
+        if reason == "":
             reason = "No reason given."
             
         if reason:
             if warned_user.reasons is None:
                 warned_user.reasons = [reason]
             else:
-                warned_user.reasons = warned_user.reasons + [reason]  # TODO:: double check this Daan: Not really wizardry, it adds a new entry to a list/array which can be done this way, basically append equivalent
+                warned_user.reasons = warned_user.reasons + [reason]  # Done this way so SQLAlchemy sees it as a change
 
         reasons = warned_user.reasons
         num = warned_user.num_warns

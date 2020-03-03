@@ -433,7 +433,7 @@ def fban(update: Update, context: CallbackContext):
         chat_id = chat.chat
 
         # Check if this group has disabled gbans
-        if not sql.does_chat_fban(chat_id):
+        if not sql.does_chat_gban(chat_id):
             continue
 
         try:
