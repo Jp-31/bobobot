@@ -202,9 +202,6 @@ def disable_spamw(chat_id):
         SESSION.commit()
         SPAMWATCH_LIST.add(str(chat_id))
 
-def does_chat_fban(chat_id):
-    return SESSION.query(GbanSettings).get(chat_id).setting
-
 def does_chat_gban(chat_id):
     return str(chat_id) not in GBANSTAT_LIST
 
