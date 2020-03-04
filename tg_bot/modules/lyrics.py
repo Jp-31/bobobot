@@ -21,7 +21,6 @@ def lyrics(update: Update, context: CallbackContext):
     
     if args and len(args) != 0:
         song = " ".join(args).split("- ")
-        print(song)
     else:
         song = ""
         LOGGER.log(2, "No arguments given.")
