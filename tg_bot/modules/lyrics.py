@@ -17,19 +17,20 @@ def lyrics(update: Update, context: CallbackContext):
     message = update.effective_message
     text = message.text[len('/lyrics '):]
     args = message.text.split(" ")
-    args = args.remove(args[0])
+    args = args[1:]
     
     if args and len(args) != 0:
         song = " ".join(args).split("- ")
+        print(song)
     else:
         song = ""
         LOGGER.log(2, "No arguments given.")
 
     reply_text = f'Looks up for lyrics'
     
-    if len(song) == 3:
+    if len(song) == 2:
+        song[0].strip()
         song[1].strip()
-        song[2].strip()
         try:
             lyrics = "\n".join(PyLyrics.getLyrics(
                 song[0], song[1]).split("\n")[:20])
