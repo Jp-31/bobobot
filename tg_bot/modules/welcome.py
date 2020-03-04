@@ -501,7 +501,7 @@ def welcomemute(update: Update, context: CallbackContext) -> str:
         elif args_option != "" and args_option in ("aggressive"):
              sql.set_welcome_mutes(chat.id, "aggressive")
              msg.reply_text("I will now mute people when they join and"
-                           " click on the button to be unmuted, else they will be kicked after 1 hour if failed to verify.")
+                           " click on the button to be unmuted, else they will be kicked with a minute if failed to verify.")
              return "<b>{}:</b>" \
                     "\n#WELCOME_MUTE" \
                     "\n<b>• Admin:</b> {}" \
@@ -729,7 +729,7 @@ This proves they aren't a bot!
 *welcome mute types:*
 soft - restricts users ability to post media for 24 hours. 
 strong - mutes on join until they prove they're not bots.
-aggressive - mutes on join until they prove they're not bots, else will be kicked within 1 hour. 
+aggressive - mutes on join until they prove they're not bots, else will be kicked within a minute.
 
  - /welcomehelp: view more formatting information for custom welcome/goodbye messages.
  
