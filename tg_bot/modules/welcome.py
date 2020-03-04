@@ -190,7 +190,7 @@ def new_member(update: Update, context: CallbackContext):
                                                     until_date=(int(time.time() + 24 * 60 * 60)))
                 #Join welcome: strong mute
                 if welc_mutes == "strong":
-                    msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
+                    mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
                                                                                                         new_mem.id),
                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
@@ -198,14 +198,14 @@ def new_member(update: Update, context: CallbackContext):
                 
                 #Join welcome: aggressive mute
                 elif welc_mutes == "aggressive":
-                    msg.reply_text(agg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
+                    mute_message = msg.reply_text(agg, reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
                     context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
             delete_join(update, context)
             if not human_checks:
-                time.sleep(3600)
-                agg.delete()
-                chat.unban_member(new_mem.id)
+                time.sleep(60)
+                context.bot.delete_message(chat.id, mute_message.message_id)
+                chat.kick_member(new_mem.id)
         prev_welc = sql.get_clean_pref(chat.id)
         if prev_welc:
             try:
