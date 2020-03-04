@@ -3,3 +3,5 @@ tg_bot/config.py
 .idea/
 .DS_Store
 *.orig
+.vscode/settings.json
+config*.py
