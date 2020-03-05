@@ -219,6 +219,7 @@ def new_member(update: Update, context: CallbackContext):
                 time.sleep(60)
                 context.bot.delete_message(chat.id, mute_message.message_id)
                 chat.kick_member(new_mem.id)
+                chat.unban_member(new_mem.id)
 
 @run_async
 def left_member(update: Update, context: CallbackContext):
