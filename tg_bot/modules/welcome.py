@@ -111,6 +111,7 @@ def new_member(update: Update, context: CallbackContext):
     cust_welcome = markdown_to_html(cust_welcome)
     welc_mutes = sql.welcome_mutes(chat.id)
     human_checks = sql.get_human_checks(user.id, chat.id)
+    prev_welc = sql.get_clean_pref(chat.id)
     
     try:
         for mem in msg.new_chat_members:
@@ -195,7 +196,7 @@ def new_member(update: Update, context: CallbackContext):
                         reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
                     context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_STRONG)
-                
+
                 #Join welcome: aggressive mute
                 elif welc_mutes == "aggressive":
                     mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
@@ -204,20 +205,20 @@ def new_member(update: Update, context: CallbackContext):
                         callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
                     context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
             delete_join(update, context)
-            
+
+            if prev_welc:
+                try:
+                    context.bot.delete_message(chat.id, prev_welc)
+                except BadRequest as excp:
+                    pass
+
+            if sent:
+                sql.set_clean_welcome(chat.id, sent.message_id)
+
             if not human_checks and welc_mutes == "aggressive":
                 time.sleep(60)
                 context.bot.delete_message(chat.id, mute_message.message_id)
                 chat.kick_member(new_mem.id)
-        prev_welc = sql.get_clean_pref(chat.id)
-        if prev_welc:
-            try:
-                context.bot.delete_message(chat.id, prev_welc)
-            except BadRequest as excp:
-                pass
-
-            if sent:
-                sql.set_clean_welcome(chat.id, sent.message_id)
 
 @run_async
 def left_member(update: Update, context: CallbackContext):
