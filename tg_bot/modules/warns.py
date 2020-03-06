@@ -502,7 +502,7 @@ def set_warn_mode(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     args = msg.text.split(" ")
 
-    if args:
+    if len(args) > 1:
         if args[1].lower() in ("ban"):
             sql.set_warn_mode(chat.id, 1)
             msg.reply_text("Updated warning mode to: ban")

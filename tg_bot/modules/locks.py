@@ -2,7 +2,7 @@ import html
 from typing import Optional, List
 
 import telegram.ext as tg
-from telegram import Message, Chat, Update, Bot, ParseMode, User, MessageEntity
+from telegram import Message, Chat, Update, Bot, ParseMode, User, MessageEntity, ChatPermissions
 from telegram import TelegramError
 from telegram.error import BadRequest
 from telegram.ext import CommandHandler, MessageHandler, Filters, CallbackContext, PrefixHandler
@@ -23,6 +23,17 @@ from tg_bot.modules.sql import users_sql
 from tg_bot.modules.sql.urlwhitelist_sql import get_whitelisted_urls
 
 ad = AlphabetDetector()
+
+LOCK_PERMISSIONS = ChatPermissions(can_send_messages=False)
+
+UNLOCK_PERMISSIONS = ChatPermissions(can_send_messages=True,
+                                     can_send_media_messages=True,
+                                     can_send_other_messages=True,
+                                     can_add_web_page_previews=True,
+                                     can_send_polls=True,
+                                     can_invite_users=True,
+                                     can_pin_messages=True,
+                                     can_change_info=True)
 
 LOCK_TYPES = {'sticker': Filters.sticker,
               'audio': Filters.audio,
@@ -95,12 +106,12 @@ tg.CommandHandler = CustomCommandHandler
 
 
 # NOT ASYNC
-def restr_members(bot, chat_id, members, messages=False, media=False, other=False, previews=False):
+def restr_members(context, chat_id, members, messages=False, media=False, other=False, previews=False):
     for mem in members:
         if mem.user in SUDO_USERS:
             pass
         try:
-            bot.restrict_chat_member(chat_id, mem.user,
+            context.bot.restrict_chat_member(chat_id, mem.user,
                                      can_send_messages=messages,
                                      can_send_media_messages=media,
                                      can_send_other_messages=other,
@@ -110,10 +121,10 @@ def restr_members(bot, chat_id, members, messages=False, media=False, other=Fals
 
 
 # NOT ASYNC
-def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True, previews=True):
+def unrestr_members(context, chat_id, members, messages=True, media=True, other=True, previews=True):
     for mem in members:
         try:
-            bot.restrict_chat_member(chat_id, mem.user,
+            context.bot.restrict_chat_member(chat_id, mem.user,
                                      can_send_messages=messages,
                                      can_send_media_messages=media,
                                      can_send_other_messages=other,
@@ -147,12 +158,23 @@ def lock(update: Update, context: CallbackContext) -> str:
                        "\n<b>• Admin:</b> {}" \
                        "\nLocked <code>{}</code>.".format(html.escape(chat.title),
                                                           mention_html(user.id, user.first_name), args[1])
+            elif args[1] in "all":
+                context.bot.set_chat_permissions(update.message.chat.id, LOCK_PERMISSIONS)
+                sql.update_restriction(chat.id, args[1], locked=True)
+                message.reply_text("Locked {} messages for all non-admins!".format(args[1]))
+                context.bot.send_message(chat.id, "***Chat is currently muted.***", parse_mode=ParseMode.MARKDOWN)
+
+                return "<b>{}:</b>" \
+                       "\n#LOCK" \
+                       "\n<b>• Admin:</b> {}" \
+                       "\nLocked <code>{}</code>.".format(html.escape(chat.title),
+                                                          mention_html(user.id, user.first_name), args[1])
 
             elif args[1] in RESTRICTION_TYPES:
                 sql.update_restriction(chat.id, args[1], locked=True)
                 if args[1] == "previews":
                     members = users_sql.get_chat_members(str(chat.id))
-                    restr_members(context.bot, chat.id, members, messages=True, media=True, other=True)
+                    restr_members(context, chat.id, members, messages=True, media=True, other=True)
 
                 message.reply_text("Locked {} for all non-admins!".format(args[1]))
                 return "<b>{}:</b>" \
@@ -189,6 +211,18 @@ def unlock(update: Update, context: CallbackContext) -> str:
                        "\n<b>• Admin:</b> {}" \
                        "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
                                                             mention_html(user.id, user.first_name), args[1])
+            
+            elif args[1] in "all":
+                context.bot.set_chat_permissions(update.message.chat.id, UNLOCK_PERMISSIONS)
+                sql.update_restriction(chat.id, args[1], locked=False)
+                message.reply_text("Unlocked all for everyone!".format(args[1]))
+                context.bot.send_message(chat.id, "***Chat is unmuted.***", parse_mode=ParseMode.MARKDOWN)
+
+                return "<b>{}:</b>" \
+                       "\n#UNLOCK" \
+                       "\n<b>• Admin:</b> {}" \
+                       "\nLocked <code>{}</code>.".format(html.escape(chat.title),
+                                                          mention_html(user.id, user.first_name), args[1])
 
             elif args[1] in RESTRICTION_TYPES:
                 sql.update_restriction(chat.id, args[1], locked=False)
