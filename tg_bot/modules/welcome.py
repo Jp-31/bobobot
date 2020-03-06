@@ -1,6 +1,7 @@
 from html import escape
 import time, spamwatch
 import re
+import threading
 from typing import Optional, List
 
 from telegram import Message, Chat, Update, Bot, User, CallbackQuery, ChatPermissions
@@ -216,10 +217,15 @@ def new_member(update: Update, context: CallbackContext):
                 sql.set_clean_welcome(chat.id, sent.message_id)
 
             if not human_checks and welc_mutes == "aggressive":
-                time.sleep(60)
-                context.bot.delete_message(chat.id, mute_message.message_id)
-                chat.kick_member(new_mem.id)
-                chat.unban_member(new_mem.id)
+                t = threading.Thread(target=aggr_mute_check, args=(
+                    context.bot, chat, mute_message.message_id, new_mem.id,))
+                t.start()
+
+def aggr_mute_check(bot: Bot, chat: Chat, message_id, user_id):
+    time.sleep(60)
+    bot.delete_message(chat.id, message_id)
+    chat.kick_member(user_id)
+    chat.unban_member(user_id)
 
 @run_async
 def left_member(update: Update, context: CallbackContext):
