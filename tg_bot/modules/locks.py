@@ -61,9 +61,28 @@ class CustomCommandHandler(tg.PrefixHandler):
         super().__init__(prefix, command, callback, **kwargs)
 
     def check_update(self, update: Update):
-        return super().check_update(update) and not (
-                sql.is_restr_locked(update.effective_chat.id, 'messages') and not is_user_admin(update.effective_chat,
-                                                                                                update.effective_user.id))
+        if isinstance(update, Update) and update.effective_message:
+            message = update.effective_message
+
+            if message.text:
+                sql_result = (
+                    sql.is_restr_locked(update.effective_chat.id, 'messages') and not is_user_admin(update.effective_chat,
+                                                                                                    update.effective_user.id))
+                text_list = message.text.split()
+                if text_list[0].split("@")[0].lower() in self.command and len(text_list[0].split("@")) > 1 and text_list[0].split("@")[1] == message.bot.username:
+                    filter_result = self.filters(update)
+                    if filter_result:
+                        return text_list[1:], filter_result and not sql_result
+                    else:
+                        return False and not sql_result
+                else:
+                    if text_list[0].lower() not in self.command:
+                        return None
+                    filter_result = self.filters(update)
+                    if filter_result:
+                        return text_list[1:], filter_result and not sql_result
+                    else:
+                        return False and not sql_result
     
     def collect_additional_context(self, context, update, dispatcher, check_result):
         if check_result != True and check_result != False and check_result is not None:
