@@ -106,12 +106,12 @@ tg.CommandHandler = CustomCommandHandler
 
 
 # NOT ASYNC
-def restr_members(context, chat_id, members, messages=False, media=False, other=False, previews=False):
+def restr_members(bot, chat_id, members, messages=False, media=False, other=False, previews=False):
     for mem in members:
         if mem.user in SUDO_USERS:
             pass
         try:
-            context.bot.restrict_chat_member(chat_id, mem.user,
+            bot.restrict_chat_member(chat_id, mem.user,
                                      can_send_messages=messages,
                                      can_send_media_messages=media,
                                      can_send_other_messages=other,
@@ -121,10 +121,10 @@ def restr_members(context, chat_id, members, messages=False, media=False, other=
 
 
 # NOT ASYNC
-def unrestr_members(context, chat_id, members, messages=True, media=True, other=True, previews=True):
+def unrestr_members(bot, chat_id, members, messages=True, media=True, other=True, previews=True):
     for mem in members:
         try:
-            context.bot.restrict_chat_member(chat_id, mem.user,
+            bot.restrict_chat_member(chat_id, mem.user,
                                      can_send_messages=messages,
                                      can_send_media_messages=media,
                                      can_send_other_messages=other,
@@ -174,7 +174,7 @@ def lock(update: Update, context: CallbackContext) -> str:
                 sql.update_restriction(chat.id, args[1], locked=True)
                 if args[1] == "previews":
                     members = users_sql.get_chat_members(str(chat.id))
-                    restr_members(context, chat.id, members, messages=True, media=True, other=True)
+                    restr_members(context.bot, chat.id, members, messages=True, media=True, other=True)
 
                 message.reply_text("Locked {} for all non-admins!".format(args[1]))
                 return "<b>{}:</b>" \
@@ -229,19 +229,19 @@ def unlock(update: Update, context: CallbackContext) -> str:
                 """
                 members = users_sql.get_chat_members(chat.id)
                 if args[1] == "messages":
-                    unrestr_members(bot, chat.id, members, media=False, other=False, previews=False)
+                    unrestr_members(context.bot, chat.id, members, media=False, other=False, previews=False)
 
                 elif args[1] == "media":
-                    unrestr_members(bot, chat.id, members, other=False, previews=False)
+                    unrestr_members(context.bot, chat.id, members, other=False, previews=False)
 
                 elif args[1] == "other":
-                    unrestr_members(bot, chat.id, members, previews=False)
+                    unrestr_members(context.bot, chat.id, members, previews=False)
 
                 elif args[1] == "previews":
-                    unrestr_members(bot, chat.id, members)
+                    unrestr_members(context.bot, chat.id, members)
 
                 elif args[1] == "all":
-                    unrestr_members(bot, chat.id, members, True, True, True, True)
+                    unrestr_members(context.bot, chat.id, members, True, True, True, True)
                 """
                 message.reply_text("Unlocked {} for everyone!".format(args[1]))
 
