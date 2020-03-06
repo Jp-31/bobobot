@@ -8,7 +8,7 @@ from telegram.ext import run_async, MessageHandler, Filters, CallbackContext
 from telegram.utils.helpers import mention_html
 
 import tg_bot.modules.sql.global_mutes_sql as sql
-from tg_bot import dispatcher, OWNER_ID, SUPER_ADMINS, SUDO_USERS, EVIDENCES_LOG, MESSAGE_DUMP, SUPPORT_USERS, \
+from tg_bot import dispatcher, OWNER_ID, SUPER_ADMINS, SUDO_USERS, EVIDENCES_LOG, SUPPORT_USERS, \
      STRICT_GMUTE, GBAN_LOG, CMD_PREFIX, SPAMWATCH_TOKEN, LOGGER
 from tg_bot.modules.helper_funcs.chat_status import user_admin, is_user_admin
 from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
@@ -53,199 +53,6 @@ UNGMUTE_ERRORS = {
 }
 
 
-@run_async
-def gmute(update: Update, context: CallbackContext):
-    message = update.effective_message  # type: Optional[Message]
-    user = update.effective_user  # type: Optional[User]
-    args = message.text.split(" ")
-    user_id, reason = extract_user_and_text(message, args)
-
-    if not user_id:
-        message.reply_text("You don't seem to be referring to a user.")
-        return
-
-    if int(user_id) in SUDO_USERS:
-        message.reply_text("You're playing with fire! Sudo war is catastrophic.")
-        return
-
-    if int(user_id) in SUPPORT_USERS:
-        message.reply_text("Tolerance, ya hear me? Good luck trying to gmute a support user!")
-        return
-    
-    if int(user_id) in SUPER_ADMINS:
-        message.reply_text("This is one of the super admin users appointed by the hierarchy. "
-                           "Therefore, I can't touch this user!")
-        return
-
-    if user_id == context.bot.id:
-        message.reply_text("-_- So funny, lets gmute myself why don't I? Nice try.")
-        return
-
-    try:
-        user_chat = context.bot.get_chat(user_id)
-    except BadRequest as excp:
-        message.reply_text(excp.message)
-        return
-
-    if user_chat.type != 'private':
-        message.reply_text("That's not a user!")
-        return
-
-    if sql.is_user_gmuted(user_id):
-        if not reason:
-            msg = "User {} has already been gmuted; " \
-                  "I'd change the reason, but you haven't given me one...".format(mention_html(user_chat.id,
-                                                                                  user_chat.first_name or 
-                                                                                  "Deleted Account"))
-            message.reply_text(msg, parse_mode=ParseMode.HTML)
-            return
-
-        old_reason = sql.update_gmute_reason(user_id, user_chat.username or user_chat.first_name, reason)
-        user_id, new_reason = extract_user_and_text(message, args)
-
-        if old_reason == new_reason:
-            same_reason = "User {} has already been gmuted, with the " \
-                          "exact same reason.".format(mention_html(user_chat.id, user_chat.first_name 
-                                                                   or "Deleted Account"))
-
-            message.reply_text(same_reason, parse_mode=ParseMode.HTML)
-            return
-            
-        if old_reason:
-            muter = update.effective_user  # type: Optional[User]
-            send_gmute = "<b>Emendation of Global mute</b>" \
-                        "\n#GMUTE" \
-                        "\n<b>Status:</b> <code>Amended</code>" \
-                        "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-    
-            if user_chat.last_name:
-                send_gmute += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
-            
-            if user_chat.username:
-                send_gmute += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
-            
-            if  user_chat:
-                send_gmute += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
-            
-            if muter.id in SUDO_USERS:
-                send_gmute += "\n<b>Sudo:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-            if muter.id in SUPPORT_USERS:
-                send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
-                
-            if muter.id in SUPER_ADMINS:
-                send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-            if reason:
-                send_gmute += "\n<b>Previous:</b> {}".format(old_reason)
-                send_gmute += "\n<b>Amended:</b> {}".format(new_reason)
-            
-
-            context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-            old_msg = "User {} is already gmuted, for the following reason:\n" \
-                      "<code>{}</code>\n" \
-                      "I've gone and updated it with your new reason!".format(mention_html(user_chat.id, 
-                                                                              user_chat.first_name or "Deleted Account"), 
-                                                                              old_reason)
-    
-            message.reply_text(old_msg, parse_mode=ParseMode.HTML)
-        
-        else:
-            muter = update.effective_user  # type: Optional[User]
-            send_gmute = "<b>Emendation of Global mute</b>" \
-                        "\n#GMUTE" \
-                        "\n<b>Status:</b> <code>New reason</code>" \
-                        "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or 
-                                                                "Deleted Account"))
-    
-            if user_chat.last_name:
-                send_gmute += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
-            
-            if user_chat.username:
-                send_gmute += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
-            
-            if  user_chat:
-                send_gmute += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
-            
-            if muter.id in SUDO_USERS:
-                send_gmute += "\n<b>Sudo:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-            if muter.id in SUPPORT_USERS:
-                send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-            if muter.id in SUPER_ADMINS:
-                send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-            if reason:
-                send_gmute += "\n<b>Reason:</b> {}".format(new_reason)
-
-            context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)            
-            msg = "User {} is already gmuted, but had no reason set; " \
-                  "I've gone and updated it!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-
-            message.reply_text(msg, parse_mode=ParseMode.HTML)
-
-        return
-
-    starting = "Initiating global mute for {}...".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-
-    message.reply_text(starting, parse_mode=ParseMode.HTML)
-    
-    muter = update.effective_user  # type: Optional[User]
-    send_gmute = "<b>Global mute</b>" \
-                "\n#GMUTE" \
-                "\n<b>Status:</b> <code>Enforcing</code>" \
-                "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-    
-    if user_chat.last_name:
-        send_gmute += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
-    
-    if user_chat.username:
-        send_gmute += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
-    
-    if  user_chat:
-        send_gmute += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
-    
-    if muter.id in SUDO_USERS:
-        send_gmute += "\n<b>Sudo:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
-    if muter.id in SUPPORT_USERS:
-        send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
-    if muter.id in SUPER_ADMINS:
-        send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
-    if reason:
-        send_gmute += "\n<b>Reason:</b> {}".format(reason)
-    
-    context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    sql.gmute_user(user_id, user_chat.username or user_chat.first_name, reason)
-    
-    chats = get_all_chats()
-    for chat in chats:
-        chat_id = chat.chat_id
-
-        # Check if this group has disabled gmutes
-        if not sql.does_chat_gmute(chat_id):
-            continue
-
-        try:
-            context.bot.restrict_chat_member(update.effective_chat.id, int(user_id), MUTE_PERMISSIONS)
-        except BadRequest as excp:
-            if excp.message in GMUTE_ERRORS:
-                pass
-            else:
-                message.reply_text("Could not gmute due to: {}".format(excp.message))
-                sql.ungmute_user(user_id)
-                return
-        except TelegramError:
-            pass
-
-    context.bot.send_message(chat_id=GBAN_LOG, text="{} has been successfully gmuted!".format(mention_html(user_chat.id, 
-                                                                                       user_chat.first_name or 
-                                                                                       "Deleted Account")), 
-                                                                                       parse_mode=ParseMode.HTML)
-    message.reply_text("Person has been gmuted.")
 
 @run_async
 def fmute(update: Update, context: CallbackContext):
@@ -287,7 +94,7 @@ def fmute(update: Update, context: CallbackContext):
 
     if sql.is_user_gmuted(user_id):
         if not reason:
-            msg = "User {} is already silenced; I'd change the reason, " \
+            msg = "User {} is already globally muted; I'd change the reason, " \
                   "but you haven't given me one...".format(mention_html(user_chat.id, user_chat.first_name 
                                                                         or "Deleted Account"))
 
@@ -298,7 +105,7 @@ def fmute(update: Update, context: CallbackContext):
         user_id, new_reason = extract_user_and_text(message, args)
         
         if old_reason == new_reason:
-            same_reason = "User {} has already been silenced, with the " \
+            same_reason = "User {} has already been globally muted, with the " \
                           "exact same reason.".format(mention_html(user_chat.id, user_chat.first_name or  
                                                                    "Deleted Account"))
             
@@ -307,7 +114,7 @@ def fmute(update: Update, context: CallbackContext):
         
         if old_reason:
             muter = update.effective_user  # type: Optional[User]
-            send_gmute = "<b>Emendation of Global mute: Federation</b>" \
+            send_gmute = "<b>Emendation of Global mute</b>" \
                         "\n#GMUTE" \
                         "\n<b>Status:</b> <code>Amended</code>" \
                         "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or 
@@ -328,22 +135,12 @@ def fmute(update: Update, context: CallbackContext):
             if muter.id in SUPPORT_USERS:
                 send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
             
-            if muter.id in SUPER_ADMINS:
-                send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
             if reason:
                 send_gmute += "\n<b>Previous:</b> {}".format(old_reason)
                 send_gmute += "\n<b>Amended:</b> {}".format(new_reason)
             
-            
-            if muter.id in SUDO_USERS:
-                context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-            if muter.id in SUPPORT_USERS:
-                context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-            
-            context.bot.send_message(MESSAGE_DUMP, text=send_gmute, parse_mode=ParseMode.HTML)
-            old_msg = "User {} is already silenced, for the following reason:\n" \
+            context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
+            old_msg = "User {} is already globally muted, for the following reason:\n" \
                       "<code>{}</code>\n" \
                       "I've gone and updated it with your new reason!".format(mention_html(user_chat.id, 
                                                                               user_chat.first_name or "Deleted Account"), 
@@ -353,7 +150,7 @@ def fmute(update: Update, context: CallbackContext):
         
         else:
             muter = update.effective_user  # type: Optional[User]
-            send_gmute = "<b>Emendation of Global mute: Federation</b>" \
+            send_gmute = "<b>Emendation of Global mute</b>" \
                         "\n#GMUTE" \
                         "\n<b>Status:</b> <code>New reason</code>" \
                         "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or 
@@ -374,34 +171,25 @@ def fmute(update: Update, context: CallbackContext):
             if muter.id in SUPPORT_USERS:
                 send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
             
-            if muter.id in SUPER_ADMINS:
-                send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
             if reason:
                 send_gmute += "\n<b>Reason:</b> {}".format(new_reason)
             
-            if muter.id in SUDO_USERS:
-                context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-            if muter.id in SUPPORT_USERS:
-                context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-                
-            context.bot.send_message(MESSAGE_DUMP, text=send_gmute, parse_mode=ParseMode.HTML)
-            msg = "User {} is already silenced, but had no reason set; " \
+            context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
+            msg = "User {} is already globally muted, but had no reason set; " \
                   "I've gone and updated it!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
 
             message.reply_text(msg, parse_mode=ParseMode.HTML)
 
         return
 
-    starting = "Silencing {}...".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
+    starting = "Starting global mutes for {}...".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
 
     message.reply_text(starting, parse_mode=ParseMode.HTML)
     
     muter = update.effective_user  # type: Optional[User]
-    send_gmute = "<b>Global mute: Federation</b>" \
+    send_gmute = "<b>Global mute</b>" \
                 "\n#GMUTE" \
-                "\n<b>Status:</b> <code>Silenced</code>" \
+                "\n<b>Status:</b> <code>Enforced</code>" \
                 "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
     
     if user_chat.last_name:
@@ -419,19 +207,11 @@ def fmute(update: Update, context: CallbackContext):
     if muter.id in SUPPORT_USERS:
         send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
     
-    if muter.id in SUPER_ADMINS:
-        send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
     if reason:
         send_gmute += "\n<b>Reason:</b> {}".format(reason)
-            
-    if muter.id in SUDO_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-    if muter.id in SUPPORT_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-    context.bot.send_message(MESSAGE_DUMP, text=send_gmute, parse_mode=ParseMode.HTML)
+             
+
+    context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
     sql.gmute_user(user_id, user_chat.username or user_chat.first_name, reason)
     
     fmute_id = update.effective_chat  # type: Optional[Chat]
@@ -455,18 +235,11 @@ def fmute(update: Update, context: CallbackContext):
         except TelegramError:
             pass
     
-    silence_t = "User {} silenced".format(mention_html(user_chat.id, user_chat.first_name or 
+    silence_t = "User {} has been successfully globally muted".format(mention_html(user_chat.id, user_chat.first_name or 
                                                                "Deleted Account"))
-    
-    if muter.id in SUDO_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)
-    
-    if muter.id in SUPPORT_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)
-    
-    context.bot.send_message(MESSAGE_DUMP, text=silence_t, parse_mode=ParseMode.HTML)
 
-    message.reply_text("User {} has been silenced!".format(mention_html(user_chat.id, user_chat.first_name 
+    context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)
+    message.reply_text("User {} has been globally muted!".format(mention_html(user_chat.id, user_chat.first_name 
                                                             or "Deleted Account")), parse_mode=ParseMode.HTML)
 
 
@@ -487,14 +260,15 @@ def ungmute(update: Update, context: CallbackContext):
         return
 
     if not sql.is_user_gmuted(user_id):
-        msg = "User {} is not gmuted!".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
+        msg = "User {} is not globally muted!".format(mention_html(user_chat.id, user_chat.first_name 
+                                                                         or "Deleted Account"))
         
         message.reply_text(msg, parse_mode=ParseMode.HTML)
         return
 
     muter = update.effective_user  # type: Optional[User]
 
-    message.reply_text("I pardon {}, globally with a second chance.".format(user_chat.first_name or "Deleted Account"))
+    message.reply_text("Removing {} from global mutes.".format(user_chat.first_name or "Deleted Account"))
 
     send_gmute = "<b>Regression of Global mute</b>" \
                 "\n#GMUTE" \
@@ -515,15 +289,14 @@ def ungmute(update: Update, context: CallbackContext):
     
     if muter.id in SUPPORT_USERS:
         send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
-    if muter.id in SUPER_ADMINS:
-        send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
+            
+   
     context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
     
-    chats = get_all_chats()
+    unfmute_id = update.effective_chat  # type: Optional[Chat]
+    chats = get_users_by_chat(unfmute_id.id, user_id)
     for chat in chats:
-        chat_id = chat.chat_id
+        chat_id = chat.chat
 
         # Check if this group has disabled gmutes
         if not sql.does_chat_gmute(chat_id):
@@ -546,108 +319,11 @@ def ungmute(update: Update, context: CallbackContext):
 
     sql.ungmute_user(user_id)
     
-    context.bot.send_message(chat_id=GBAN_LOG, 
-                     text="{} has been pardoned from gmute!".format(mention_html(user_chat.id, 
-                                                                                user_chat.first_name or 
-                                                                                "Deleted Account")), 
-                                                                                       parse_mode=ParseMode.HTML)
-    message.reply_text("This person has been un-gmuted and pardon is granted!")
-
-@run_async
-def unfmute(update: Update, context: CallbackContext):
-    message = update.effective_message  # type: Optional[Message]
-    user = update.effective_user  # type: Optional[User]
-    args = message.text.split(" ")
-
-    user_id = extract_user(message, args)
-    if not user_id:
-        message.reply_text("You don't seem to be referring to a user.")
-        return
-
-    user_chat = context.bot.get_chat(user_id)
-    if user_chat.type != 'private':
-        message.reply_text("That's not a user!")
-        return
-
-    if not sql.is_user_gmuted(user_id):
-        msg = "User {} is not silenced globally!".format(mention_html(user_chat.id, user_chat.first_name 
-                                                                         or "Deleted Account"))
-        
-        message.reply_text(msg, parse_mode=ParseMode.HTML)
-        return
-
-    muter = update.effective_user  # type: Optional[User]
-
-    message.reply_text("Removing {} from silence.".format(user_chat.first_name or "Deleted Account"))
-
-    send_gmute = "<b>Regression of Global mute: Federation</b>" \
-                "\n#GMUTE" \
-                "\n<b>Status:</b> <code>Ceased</code>" \
-                "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
-    
-    if user_chat.last_name:
-        send_gmute += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
-    
-    if user_chat.username:
-        send_gmute += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
-    
-    if  user_chat:
-        send_gmute += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
-    
-    if muter.id in SUDO_USERS:
-        send_gmute += "\n<b>Sudo:</b> {}".format(mention_html(muter.id, muter.first_name))
-    
-    if muter.id in SUPPORT_USERS:
-        send_gmute += "\n<b>Support:</b> {}".format(mention_html(muter.id, muter.first_name))
-        
-    if muter.id in SUPER_ADMINS:
-        send_gmute += "\n<b>Super Admin:</b> {}".format(mention_html(muter.id, muter.first_name))
-            
-    if muter.id in SUDO_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-    if muter.id in SUPPORT_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-    context.bot.send_message(MESSAGE_DUMP, text=send_gmute, parse_mode=ParseMode.HTML)
-    
-    unfmute_id = update.effective_chat  # type: Optional[Chat]
-    chats = get_users_by_chat(unfmute_id.id, user_id)
-    for chat in chats:
-        chat_id = chat.chat
-
-        # Check if this group has disabled gmutes
-        if not sql.does_chat_gmute(chat_id):
-            continue
-
-        try:
-            member = context.bot.get_chat_member(chat_id, user_id)
-            if member.status == 'kicked':
-                context.bot.restrict_chat_member(update.effective_chat.id, int(user_id), UNMUTE_PERMISSIONS)
-
-        except BadRequest as excp:
-            if excp.message in UNGMUTE_ERRORS:
-                pass
-            else:
-                message.reply_text("Could not un-silence due to: {}".format(excp.message))
-                context.bot.send_message(OWNER_ID, "Could not un-silence due to: {}".format(excp.message))
-                return
-        except TelegramError:
-            pass
-
-    sql.ungmute_user(user_id)
-    
-    silence_t = "User {} has been unsilenced.".format(mention_html(user_chat.id, user_chat.first_name or 
+    silence_t = "User {} has been pardoned from global mutes.".format(mention_html(user_chat.id, user_chat.first_name or 
                                                                                      "Deleted Account"))
-    if muter.id in SUDO_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)
     
-    if muter.id in SUPPORT_USERS:
-        context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)                                                                                     
-    
-    context.bot.send_message(MESSAGE_DUMP, text=silence_t, parse_mode=ParseMode.HTML)
-
-    message.reply_text("User {} has been unsilenced.".format(mention_html(user_chat.id, user_chat.first_name 
+    context.bot.send_message(chat_id=GBAN_LOG, text=silence_t, parse_mode=ParseMode.HTML)
+    message.reply_text("User {} has been pardoned from global mutes.".format(mention_html(user_chat.id, user_chat.first_name 
                                                                or "Deleted Account")), parse_mode=ParseMode.HTML)
 
 @run_async
@@ -850,16 +526,10 @@ You can disable the Global mutes by `/gmutestat off` or enable `/gmutestat on`.
 
 __mod_name__ = "Global Mutes"
 
-GMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "gmute", gmute,
+GMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["fmute", "gmute"], fmute,
                               filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
-FMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "fmute", fmute,
-                              filters=CustomFilters.sudo_filter | CustomFilters.support_filter
-                              | CustomFilters.super_admins_filter)
-UNFMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "unfmute", unfmute,
-                              filters=CustomFilters.sudo_filter | CustomFilters.support_filter 
-                              | CustomFilters.super_admins_filter)
-UNGMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "ungmute", ungmute,
-                                filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
+UNGMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, ["unfmute", "ungmute"], ungmute,
+                              filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
 GMUTE_LIST = CustomCommandHandler(CMD_PREFIX, "gmutelist", gmutelist,
                            filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
                            
@@ -869,9 +539,7 @@ GMUTE_ALERT = CustomCommandHandler(CMD_PREFIX, "gmutealert", gmutealert, filters
 GMUTE_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_gmute)
 
 dispatcher.add_handler(GMUTE_HANDLER)
-dispatcher.add_handler(FMUTE_HANDLER)
 dispatcher.add_handler(UNGMUTE_HANDLER)
-dispatcher.add_handler(UNFMUTE_HANDLER)
 dispatcher.add_handler(GMUTE_LIST)
 dispatcher.add_handler(GMUTE_STATUS)
 dispatcher.add_handler(GMUTE_ALERT)
