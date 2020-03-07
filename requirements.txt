@@ -13,3 +13,4 @@ bleach
 markdown2
 spamwatch
 regex
+googletrans
