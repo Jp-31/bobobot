@@ -130,6 +130,8 @@ All bios are displayed on /info command.
  - /bio: will get your or another user's bio. This cannot be set by yourself.
  - /setme <text>: will set your info
  - /me: will get your or another user's info
+ - /setnick <text>: will set your nickname.
+ - /nick: will get your or another user's nickname.
  
 An example of setting a bio for yourself:
 `/setme I work for Telegram`; Bio is set to yourself.

@@ -887,8 +887,6 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
  - /hug: hug a user, or get hugged if not a reply.
  - /punch: punch a user, or get punched if not a reply.
  - /info: get information about a user.
- - /setnick <text>: will set your nickname.
- - /nick: will get your or another user's nickname.
  - /gdpr: deletes your information from the bot's database. Private chats only.
  - Hi {}: responds to user (to disable greet `/disable botgreet`; to enable greet `/enable botgreet`)
  - /markdownhelp: quick summary of how markdown works in telegram - can only be called in private chats.
