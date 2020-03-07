@@ -712,7 +712,7 @@ def echo(update: Update, context: CallbackContext):
     message.delete()
 
 @run_async
-def totranslate(update: Update, context: CallbackContext):
+def translator(update: Update, context: CallbackContext):
 
     msg = update.effective_message
     problem_lang_code = []
@@ -763,10 +763,13 @@ def totranslate(update: Update, context: CallbackContext):
             if source_lang == None:
                 detection = trl.detect(text)
                 tekstr = trl.translate(text, dest=dest_lang)
-                return message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(detection.lang, dest_lang, tekstr.text), parse_mode=ParseMode.MARKDOWN)
+                return message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(detection.lang, 
+                                                                                       dest_lang, tekstr.text), 
+                                                                                       parse_mode=ParseMode.MARKDOWN)
             else:
                 tekstr = trl.translate(text, dest=dest_lang, src=source_lang)
-                message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(source_lang, dest_lang, tekstr.text), parse_mode=ParseMode.MARKDOWN)
+                message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(source_lang, dest_lang, tekstr.text), 
+                                                                                parse_mode=ParseMode.MARKDOWN)
         else:
             args = update.effective_message.text.split(None, 2)
             message = update.effective_message
@@ -799,15 +802,23 @@ def totranslate(update: Update, context: CallbackContext):
             if dest_lang == None:
                 detection = trl.detect(text)
                 tekstr = trl.translate(text, dest=source_lang)
-                return message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(detection.lang, source_lang, tekstr.text), parse_mode=ParseMode.MARKDOWN)
+                return message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(detection.lang, 
+                                                                                       source_lang, tekstr.text), 
+                                                                                       parse_mode=ParseMode.MARKDOWN)
             else:
                 tekstr = trl.translate(text, dest=dest_lang, src=source_lang)
-                message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(source_lang, dest_lang, tekstr.text), parse_mode=ParseMode.MARKDOWN)
+                message.reply_text("Translated from `{}` to `{}`:\n`{}`".format(source_lang, dest_lang, 
+                                                                                tekstr.text), 
+                                                                                parse_mode=ParseMode.MARKDOWN)
 
     except IndexError:
-        update.effective_message.reply_text("Reply to messages or write messages from other languages ​​for translating into the intended language\n\nExample: `/tr en ml` to translate from English to Malayalam\nOr use: `/tr ml` for automatic detection and translating it into Malayalam.\nSee [List of Language Codes](https://t.me/nataliesupport/130) for a list of language codes.", parse_mode="markdown", disable_web_page_preview=True)
+        msg.reply_text("Reply to messages or write messages from other languages ​​for translating into the "
+                       "intended language\n\nExample: `/tl en ar` to translate from English to Arabic\nOr "
+                       "use: `/tl ar` for automatic detection and translating it into Arabic. "
+                       "\nCheck the following [list of Language Codes](https://t.me/nataliesupport/130) for the list of "
+                       "arguments codes in tranlator.", parse_mode=ParseMode.MARKDOWN, disable_web_page_preview=True)
     except ValueError:
-        update.effective_message.reply_text("The intended language is not found!")
+        msg.reply_text("Language in args not found!")
     else:
         return
 
@@ -887,7 +898,6 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
  - /hug: hug a user, or get hugged if not a reply.
  - /punch: punch a user, or get punched if not a reply.
  - /info: get information about a user.
- - /gdpr: deletes your information from the bot's database. Private chats only.
  - Hi {}: responds to user (to disable greet `/disable botgreet`; to enable greet `/enable botgreet`)
  - /markdownhelp: quick summary of how markdown works in telegram - can only be called in private chats.
 """.format(dispatcher.bot.first_name)
@@ -905,7 +915,7 @@ RNUM_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "rnum", rnum)
 #TIME_HANDLER = CommandHandler("time", get_time)
 SLAP_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "slap", slap)
 PUNCH_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "punch", punch)
-TRANSLATOR_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"tl", totranslate)
+TRANSLATOR_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"tl", translator)
 HUG_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "hug", hug)
 INFO_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"info", info)
 PING_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "ping", ping)
