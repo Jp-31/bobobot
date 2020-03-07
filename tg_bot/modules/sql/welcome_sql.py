@@ -16,7 +16,6 @@ class Welcome(BASE):
     should_goodbye = Column(Boolean, default=True)
 
     custom_welcome = Column(UnicodeText, default=DEFAULT_WELCOME)
-    caption_welcome = Column(UnicodeText, default=None)
     welcome_type = Column(Integer, default=Types.TEXT.value)
 
     custom_leave = Column(UnicodeText, default=DEFAULT_GOODBYE)
@@ -144,10 +143,10 @@ def get_welc_pref(chat_id):
     welc = SESSION.query(Welcome).get(str(chat_id))
     SESSION.close()
     if welc:
-        return welc.should_welcome, welc.custom_welcome, welc.welcome_type, welc.caption_welcome
+        return welc.should_welcome, welc.custom_welcome, welc.welcome_type
     else:
         # Welcome by default.
-        return True, DEFAULT_WELCOME, Types.TEXT, None
+        return True, DEFAULT_WELCOME, Types.TEXT
 
 
 def get_gdbye_pref(chat_id):
@@ -257,7 +256,7 @@ def set_gdbye_preference(chat_id, should_goodbye):
         SESSION.commit()
 
 
-def set_custom_welcome(chat_id, custom_welcome, caption_welcome, welcome_type, buttons=None):
+def set_custom_welcome(chat_id, custom_welcome, welcome_type, buttons=None):
     if buttons is None:
         buttons = []
 
@@ -270,16 +269,8 @@ def set_custom_welcome(chat_id, custom_welcome, caption_welcome, welcome_type, b
             welcome_settings.custom_welcome = custom_welcome
             welcome_settings.welcome_type = welcome_type.value
 
-        if not custom_welcome:
-            welcome_settings.custom_welcome = None
-            welcome_settings.welcome_type = welcome_type.value
-
-        if caption_welcome:
-            welcome_settings.caption_welcome = caption_welcome
-
         else:
             welcome_settings.custom_welcome = DEFAULT_GOODBYE
-            welcome_settings.caption_welcome = None
             welcome_settings.welcome_type = Types.TEXT.value
 
         SESSION.add(welcome_settings)
