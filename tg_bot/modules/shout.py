@@ -21,8 +21,8 @@ def shout(update: Update, context: CallbackContext):
     else:
         text = " ".join(args)
 
-    if len(text) > 12:
-        message.reply_text("Text is longer than 12 characters.")
+    if len(text) > 40:
+        message.reply_text("Text is longer than 40 characters.")
     else:
         result = []
         result.append(' '.join([s for s in text]))
