@@ -10,6 +10,7 @@ def shout(update: Update, context: CallbackContext):
     args = message.text.split(" ")
     args.remove(args[0])
     msg = "```"
+    text = " "
     if len(args) == 0 and not message.reply_to_message:
         message.reply_text("Give me an args to shout or reply to a text!")
         return
@@ -17,12 +18,13 @@ def shout(update: Update, context: CallbackContext):
     if not args and message.reply_to_message and message.reply_to_message.sticker == (False or None):
         args = message.reply_to_message.text.split(" ")
         text = " ".join(args)
-        if len(args) > 8:
-            message.reply_text("Replied shout text length is longer than 8 characters.")
+        if len(args) > 12:
+            message.reply_text("Replied shout text length is longer than 12 characters.")
     else:
-        text = " ".join(args)
-        if len(args) > 8:
-            message.reply_text("Shout text length is longer than 8 characters.")
+        if len(args) > 12:
+            message.reply_text("Shout text length is longer than 12 characters.")
+        else:
+            text = " ".join(args)
 
     result = []
     result.append(' '.join([s for s in text]))
