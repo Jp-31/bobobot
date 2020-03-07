@@ -30,10 +30,7 @@ UNLOCK_PERMISSIONS = ChatPermissions(can_send_messages=True,
                                      can_send_media_messages=True,
                                      can_send_other_messages=True,
                                      can_add_web_page_previews=True,
-                                     can_send_polls=True,
-                                     can_invite_users=True,
-                                     can_pin_messages=True,
-                                     can_change_info=True)
+                                     can_send_polls=True)
 
 LOCK_TYPES = {'sticker': Filters.sticker,
               'audio': Filters.audio,
@@ -221,7 +218,7 @@ def unlock(update: Update, context: CallbackContext) -> str:
                 return "<b>{}:</b>" \
                        "\n#UNLOCK" \
                        "\n<b>• Admin:</b> {}" \
-                       "\nLocked <code>{}</code>.".format(html.escape(chat.title),
+                       "\nUnlocked <code>{}</code>.".format(html.escape(chat.title),
                                                           mention_html(user.id, user.first_name), args[1])
 
             elif args[1] in RESTRICTION_TYPES:
