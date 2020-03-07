@@ -395,6 +395,9 @@ def welcome(update: Update, context: CallbackContext):
 
         else:
             if noformat:
+                buttons = sql.get_welc_buttons(chat.id)
+                if buttons:
+                    welc_caption += revert_buttons(buttons)
                 ENUM_FUNC_MAP[welcome_type](chat.id, welcome_m, caption=welc_caption)
 
             else:
@@ -472,7 +475,7 @@ def set_welcome(update: Update, context: CallbackContext) -> str:
     user = update.effective_user  # type: Optional[User]
     msg = update.effective_message  # type: Optional[Message]
 
-    text, data_type, content, buttons = get_welcome_type(msg, msg.text)
+    text, data_type, content, buttons = get_welcome_type(msg)
 
     if data_type is None:
         msg.reply_text("You didn't specify what to reply with!")

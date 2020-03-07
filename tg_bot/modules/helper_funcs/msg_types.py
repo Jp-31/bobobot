@@ -79,13 +79,10 @@ def get_note_type(msg: Message):
     return note_name, text, data_type, content, buttons
 
 # note: add own args?
-def get_welcome_type(msg: Message, args_text=None):
+def get_welcome_type(msg: Message):
     data_type = None
     content = None
     text = ""
-    if args_text:
-        args_text = args_text.split(None, 1)
-
     args = msg.text.split(None, 1)  # use python's maxsplit to separate cmd and args
 
     buttons = []
@@ -105,22 +102,22 @@ def get_welcome_type(msg: Message, args_text=None):
 
     elif msg.reply_to_message and msg.reply_to_message.document:
         content = msg.reply_to_message.document.file_id
-        if msg.reply_to_message and len(args_text) > 0:
+        if msg.reply_to_message and len(args) > 0:
             # set correct offset relative to command + notename
-            offset = len(args_text[1]) - len(msg.text)
+            offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
-                args_text[1], entities=msg.parse_entities(), offset=offset)
+                args[1], entities=msg.parse_entities(), offset=offset)
         else:
             text = msg.reply_to_message.caption
         data_type = Types.DOCUMENT
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
         content = msg.reply_to_message.photo[-1].file_id  # last elem = best quality
-        if msg.reply_to_message and len(args_text) > 0:
+        if msg.reply_to_message and len(args) > 0:
             # set correct offset relative to command + notename
-            offset = len(args_text[1]) - len(msg.text)
+            offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
-                args_text[1], entities=msg.parse_entities(), offset=offset)
+                args[1], entities=msg.parse_entities(), offset=offset)
         else:
             text = msg.reply_to_message.caption
         data_type = Types.PHOTO
@@ -137,11 +134,11 @@ def get_welcome_type(msg: Message, args_text=None):
 
     elif msg.reply_to_message and msg.reply_to_message.video:
         content = msg.reply_to_message.video.file_id
-        if msg.reply_to_message and len(args_text) > 0:
+        if msg.reply_to_message and len(args) > 0:
             # set correct offset relative to command + notename
-            offset = len(args_text[1]) - len(msg.text)
+            offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
-                args_text[1], entities=msg.parse_entities(), offset=offset)
+                args[1], entities=msg.parse_entities(), offset=offset)
         else:
             text = msg.reply_to_message.caption
         data_type = Types.VIDEO
