@@ -79,16 +79,19 @@ def get_note_type(msg: Message):
     return note_name, text, data_type, content, buttons
 
 # note: add own args?
-def get_welcome_type(msg: Message):
+def get_welcome_type(msg: Message, args_text=None):
     data_type = None
     content = None
     text = ""
+    if args_text:
+        args_text = args_text.split(" ")[1:]
+        args_text = " ".join(args_text)
 
     args = msg.text.split(None, 1)  # use python's maxsplit to separate cmd and args
 
     buttons = []
     # determine what the contents of the filter are - text, image, sticker, etc
-    if len(args) >= 2:
+    if len(args) >= 2 and not msg.reply_to_message:
         offset = len(args[1]) - len(msg.text)  # set correct offset relative to command + notename
         text, buttons = button_markdown_parser(args[1], entities=msg.parse_entities(), offset=offset)
         if buttons:
@@ -103,12 +106,18 @@ def get_welcome_type(msg: Message):
 
     elif msg.reply_to_message and msg.reply_to_message.document:
         content = msg.reply_to_message.document.file_id
-        text = msg.reply_to_message.caption
+        if msg.reply_to_message and len(args_text) > 0:
+            text = args_text
+        else:
+            text = msg.reply_to_message.caption
         data_type = Types.DOCUMENT
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
         content = msg.reply_to_message.photo[-1].file_id  # last elem = best quality
-        text = msg.reply_to_message.caption
+        if msg.reply_to_message and len(args_text) > 0:
+            text = args_text
+        else:
+            text = msg.reply_to_message.caption
         data_type = Types.PHOTO
 
     elif msg.reply_to_message and msg.reply_to_message.audio:
@@ -123,7 +132,10 @@ def get_welcome_type(msg: Message):
 
     elif msg.reply_to_message and msg.reply_to_message.video:
         content = msg.reply_to_message.video.file_id
-        text = msg.reply_to_message.caption
+        if msg.reply_to_message and len(args_text) > 0:
+            text = args_text
+        else:
+            text = msg.reply_to_message.caption
         data_type = Types.VIDEO
 
     return text, data_type, content, buttons
