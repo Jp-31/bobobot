@@ -102,7 +102,7 @@ def get_welcome_type(msg: Message):
 
     elif msg.reply_to_message and msg.reply_to_message.document:
         content = msg.reply_to_message.document.file_id
-        if msg.reply_to_message and len(args) > 0:
+        if msg.reply_to_message and len(args) > 1:
             # set correct offset relative to command + notename
             offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
@@ -113,7 +113,7 @@ def get_welcome_type(msg: Message):
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
         content = msg.reply_to_message.photo[-1].file_id  # last elem = best quality
-        if msg.reply_to_message and len(args) > 0:
+        if msg.reply_to_message and len(args) > 1:
             # set correct offset relative to command + notename
             offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
@@ -134,7 +134,7 @@ def get_welcome_type(msg: Message):
 
     elif msg.reply_to_message and msg.reply_to_message.video:
         content = msg.reply_to_message.video.file_id
-        if msg.reply_to_message and len(args) > 0:
+        if msg.reply_to_message and len(args) > 1:
             # set correct offset relative to command + notename
             offset = len(args[1]) - len(msg.text)
             text, buttons = button_markdown_parser(
