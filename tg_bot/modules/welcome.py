@@ -144,6 +144,7 @@ def new_member(update: Update, context: CallbackContext):
     human_checks = sql.get_human_checks(user.id, chat.id)
     prev_welc = sql.get_clean_pref(chat.id)
     media = False
+    no_mute = False
 
     try:
         for mem in msg.new_chat_members:
@@ -251,26 +252,28 @@ def new_member(update: Update, context: CallbackContext):
                                 sql.DEFAULT_WELCOME.format(first=first_name))  # type: Optional[Message]
                 #User exception from mutes:
                 if is_user_ban_protected(chat, new_mem.id, chat.get_member(new_mem.id)) or human_checks or gban_checks:
-                    return ""
-                #Join welcome: soft mute
-                if welc_mutes == "soft":
-                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_SOFT,
-                                                    until_date=(int(time.time() + 24 * 60 * 60)))
-                #Join welcome: strong mute
-                if welc_mutes == "strong":
-                    mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
-                                                                                                                         new_mem.id),
-                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
-                        callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
-                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_STRONG)
+                    no_mute = True
 
-                #Join welcome: aggressive mute
-                elif welc_mutes == "aggressive":
-                    mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
-                                                                                                                         new_mem.id), 
-                        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak",
-                        callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
-                    context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
+                if not no_mute:
+                    #Join welcome: soft mute
+                    if welc_mutes == "soft":
+                        context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_SOFT,
+                                                        until_date=(int(time.time() + 24 * 60 * 60)))
+                    #Join welcome: strong mute
+                    if welc_mutes == "strong":
+                        mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
+                                                                                                                            new_mem.id),
+                            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak", 
+                            callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
+                        context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_STRONG)
+
+                    #Join welcome: aggressive mute
+                    elif welc_mutes == "aggressive":
+                        mute_message = msg.reply_text("Hey {} (`{}`),\nClick the button below to prove you're human:".format(new_mem.first_name, 
+                                                                                                                            new_mem.id), 
+                            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton(text="Tap here to speak",
+                            callback_data="user_join_({})".format(new_mem.id))]]), parse_mode=ParseMode.MARKDOWN)
+                        context.bot.restrict_chat_member(chat.id, new_mem.id, WELCOME_PERMISSIONS_AGGRESSIVE)
             delete_join(update, context)
 
             if prev_welc:
@@ -290,6 +293,7 @@ def new_member(update: Update, context: CallbackContext):
 def aggr_mute_check(bot: Bot, chat: Chat, message_id, user_id):
     time.sleep(60)
     if bot.get_chat_member(chat.id, user_id).can_send_messages:
+        bot.delete_message(chat.id, message_id)
         return
     bot.delete_message(chat.id, message_id)
     chat.kick_member(user_id)
