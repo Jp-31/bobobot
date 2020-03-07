@@ -509,7 +509,7 @@ def welcomemute(update: Update, context: CallbackContext) -> str:
         elif args_option != "" and args_option in ("aggressive"):
              sql.set_welcome_mutes(chat.id, "aggressive")
              msg.reply_text("I will now mute people when they join and"
-                           " click on the button to be unmuted, else they will be kicked with a minute if failed to verify.")
+                           " click on the button to be unmuted, else they will be kicked within a minute if failed to verify.")
              return "<b>{}:</b>" \
                     "\n#WELCOME_MUTE" \
                     "\n<b>• Admin:</b> {}" \
