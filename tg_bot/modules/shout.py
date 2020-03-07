@@ -18,26 +18,24 @@ def shout(update: Update, context: CallbackContext):
     if not args and message.reply_to_message and message.reply_to_message.sticker == (False or None):
         args = message.reply_to_message.text.split(" ")
         text = " ".join(args)
-        if len(args) > 12:
-            message.reply_text("Replied shout text length is longer than 12 characters.")
     else:
-        if len(args) > 12:
-            message.reply_text("Shout text length is longer than 12 characters.")
-        else:
-            text = " ".join(args)
+        text = " ".join(args)
 
-    result = []
-    result.append(' '.join([s for s in text]))
-    for pos, symbol in enumerate(text[1:]):
-        result.append(symbol + ' ' + '  ' * pos + symbol)
-    result = list("\n".join(result))
-    try:
-        result[0] = text[0]
-        result = "".join(result)
-        msg = "```\n" + result + "```"
-        return message.reply_text(msg, parse_mode="MARKDOWN")
-    except:
-        LOGGER.log(2, "No argument given for shout or not enough permissions.")
+    if len(text) > 12:
+        message.reply_text("Text is longer than 12 characters.")
+    else:
+        result = []
+        result.append(' '.join([s for s in text]))
+        for pos, symbol in enumerate(text[1:]):
+            result.append(symbol + ' ' + '  ' * pos + symbol)
+        result = list("\n".join(result))
+        try:
+            result[0] = text[0]
+            result = "".join(result)
+            msg = "```\n" + result + "```"
+            return message.reply_text(msg, parse_mode="MARKDOWN")
+        except:
+            LOGGER.log(2, "No argument given for shout or not enough permissions.")
     
 __help__ = """
  A little piece of fun wording! Give a loud shout out in the chatroom.
