@@ -43,7 +43,8 @@ def getsticker(update: Update, context: CallbackContext):
         file_id = msg.reply_to_message.sticker.file_id
         file = context.bot.get_file(file_id).download_as_bytearray()
         new_file = BytesIO(file)
-        context.bot.send_document(chat_id, new_file, filename="sticker.TGS")
+        context.bot.send_document(chat_id, new_file, filename="sticker.rename", caption="Go to @Stickers bot and rename\
+                                   this file to .tgs then use /newanimated or /addsticker and send this file")
     else:
         update.effective_message.reply_text(
             "Please reply to a sticker for me to upload its PNG.")
