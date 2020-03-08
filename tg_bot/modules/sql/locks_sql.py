@@ -11,14 +11,19 @@ class Permissions(BASE):
     chat_id = Column(String(14), primary_key=True)
     # Booleans are for "is this locked", _NOT_ "is this allowed"
     audio = Column(Boolean, default=False)
+    poll = Column(Boolean, default=False)
     voice = Column(Boolean, default=False)
     contact = Column(Boolean, default=False)
+    command = Column(Boolean, default=False)
     video = Column(Boolean, default=False)
+    videonote = Column(Boolean, default=False)
     document = Column(Boolean, default=False)
     photo = Column(Boolean, default=False)
     sticker = Column(Boolean, default=False)
     gif = Column(Boolean, default=False)
+    apk = Column(Boolean, default=False)
     url = Column(Boolean, default=False)
+    email = Column(Boolean, default=False)
     bots = Column(Boolean, default=False)
     forward = Column(Boolean, default=False)
     game = Column(Boolean, default=False)
@@ -28,14 +33,19 @@ class Permissions(BASE):
     def __init__(self, chat_id):
         self.chat_id = str(chat_id)  # ensure string
         self.audio = False
+        self.poll = False
         self.voice = False
         self.contact = False
+        self.command = False
         self.video = False
+        self.videonote = False
         self.document = False
         self.photo = False
         self.sticker = False
         self.gif = False
+        self.apk = False
         self.url = False
+        self.email = False
         self.bots = False
         self.forward = False
         self.game = False
@@ -104,12 +114,18 @@ def update_lock(chat_id, lock_type, locked):
 
         if lock_type == "audio":
             curr_perm.audio = locked
+        elif lock_type == "poll":
+            curr_perm.poll = locked
         elif lock_type == "voice":
             curr_perm.voice = locked
         elif lock_type == "contact":
             curr_perm.contact = locked
+        elif lock_type == "command":
+            curr_perm.command = locked
         elif lock_type == "video":
             curr_perm.video = locked
+        elif lock_type == "videonote":
+            curr_perm.videonote = locked
         elif lock_type == "document":
             curr_perm.document = locked
         elif lock_type == "photo":
@@ -118,8 +134,12 @@ def update_lock(chat_id, lock_type, locked):
             curr_perm.sticker = locked
         elif lock_type == "gif":
             curr_perm.gif = locked
+        elif lock_type == "apk":
+            curr_perm.apk = locked
         elif lock_type == 'url':
             curr_perm.url = locked
+        elif lock_type == 'email':
+            curr_perm.email = locked
         elif lock_type == 'bots':
             curr_perm.bots = locked
         elif lock_type == 'forward':
@@ -171,18 +191,28 @@ def is_locked(chat_id, lock_type):
         return curr_perm.photo
     elif lock_type == "audio":
         return curr_perm.audio
+    elif lock_type == "poll":
+        return curr_perm.poll
     elif lock_type == "voice":
         return curr_perm.voice
     elif lock_type == "contact":
         return curr_perm.contact
+    elif lock_type == "command":
+        return curr_perm.command
     elif lock_type == "video":
         return curr_perm.video
+    elif lock_type == "videonote":
+        return curr_perm.videonote
     elif lock_type == "document":
         return curr_perm.document
     elif lock_type == "gif":
         return curr_perm.gif
+    elif lock_type == "apk":
+        return curr_perm.apk
     elif lock_type == "url":
         return curr_perm.url
+    elif lock_type == "email":
+        return curr_perm.email
     elif lock_type == "bots":
         return curr_perm.bots
     elif lock_type == "forward":

@@ -34,13 +34,18 @@ UNLOCK_PERMISSIONS = ChatPermissions(can_send_messages=True,
 
 LOCK_TYPES = {'sticker': Filters.sticker,
               'audio': Filters.audio,
+              'poll': Filters.poll,
               'voice': Filters.voice,
-              'document': Filters.document & CustomFilters.mime_type("application/vnd.android.package-archive"),
+              'document': Filters.document,
               'video': Filters.video,
+              'videonote': Filters.video_note,
               'contact': Filters.contact,
+              'command': Filters.command,
               'photo': Filters.photo,
               'gif': Filters.document & CustomFilters.mime_type("video/mp4"),
+              'apk': Filters.document.mime_type("application/vnd.android.package-archive"),
               'url': Filters.entity(MessageEntity.URL) | Filters.caption_entity(MessageEntity.URL),
+              'email': Filters.entity(MessageEntity.EMAIL) | Filters.caption_entity(MessageEntity.EMAIL),
               'bots': Filters.status_update.new_chat_members,
               'forward': Filters.forwarded,
               'game': Filters.game,
@@ -50,8 +55,9 @@ LOCK_TYPES = {'sticker': Filters.sticker,
 
 GIF = Filters.document & CustomFilters.mime_type("video/mp4")
 OTHER = Filters.game | Filters.sticker | GIF
-MEDIA = Filters.audio | Filters.document & CustomFilters.mime_type("application/vnd.android.package-archive") | Filters.video | Filters.voice | Filters.photo
-MESSAGES = Filters.text | Filters.contact | Filters.location | Filters.venue | Filters.command | MEDIA | OTHER
+MEDIA = Filters.audio | Filters.document | Filters.video | Filters.video_note | Filters.voice \
+        | Filters.photo | Filters.document.mime_type("application/vnd.android.package-archive")
+MESSAGES = Filters.text | Filters.contact | Filters.poll | Filters.location | Filters.venue | Filters.command | MEDIA | OTHER
 PREVIEWS = Filters.entity("url")
 
 RESTRICTION_TYPES = {'messages': MESSAGES,
@@ -340,20 +346,41 @@ def build_lock_message(chat_id):
         if locks:
             res += "\n - sticker = `{}`" \
                    "\n - audio = `{}`" \
+                   "\n - poll = `{}`" \
                    "\n - voice = `{}`" \
                    "\n - document = `{}`" \
                    "\n - video = `{}`" \
+                   "\n - videonote = `{}`" \
                    "\n - contact = `{}`" \
+                   "\n - command = `{}`" \
                    "\n - photo = `{}`" \
                    "\n - gif = `{}`" \
+                   "\n - apk = `{}`" \
                    "\n - url = `{}`" \
+                   "\n - email = `{}`" \
                    "\n - bots = `{}`" \
                    "\n - forward = `{}`" \
                    "\n - game = `{}`" \
                    "\n - location = `{}`" \
-                   "\n - rtl = `{}` ".format(locks.sticker, locks.audio, locks.voice, locks.document,
-                                             locks.video, locks.contact, locks.photo, locks.gif, locks.url, locks.bots,
-                                             locks.forward, locks.game, locks.location, locks.rtl)
+                   "\n - rtl = `{}` ".format(locks.sticker, 
+                                             locks.audio, 
+                                             locks.poll, 
+                                             locks.voice, 
+                                             locks.document,
+                                             locks.video, 
+                                             locks.videonote, 
+                                             locks.contact, 
+                                             locks.command, 
+                                             locks.photo, 
+                                             locks.gif, 
+                                             locks.apk, 
+                                             locks.url, 
+                                             locks.email,
+                                             locks.bots, 
+                                             locks.forward, 
+                                             locks.game,
+                                             locks.location, 
+                                             locks.rtl)
         if restr:
             res += "\n - messages = `{}`" \
                    "\n - media = `{}`" \
