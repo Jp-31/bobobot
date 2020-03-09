@@ -134,6 +134,7 @@ def format_welcome_message(welc_caption, first_name, chat, new_mem):
 
 @run_async
 @can_message
+@loggable
 def new_member(update: Update, context: CallbackContext):
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
@@ -151,17 +152,25 @@ def new_member(update: Update, context: CallbackContext):
             user_id = mem.id
     except:
         LOGGER.log("User being added or no ID found for user.")
-
+    
     gban_checks = get_gbanned_user(user_id)
+    
+    log = "<b>{}:</b>" \
+          "\n#WELCOME" \
+          "\n<b>A new user has joined:</b>".format(escape(chat.title))
 
     if should_welc:
         sent = None
-        new_members = update.effective_message.new_chat_members
+        new_members = msg.new_chat_members
         for new_mem in new_members:
             spamwatch_banned = client.get_ban(new_mem.id)
+            user_add = context.bot.get_chat_member(chat.id, user.id)
 
             # edge case of empty name - occurs for some bugs.
             first_name = new_mem.first_name or "PersonWithNoName"
+            
+            log += "\n<b>• User:</b> {}" \
+                   "\n<b>• ID:</b> <code>{}</code>".format(mention_html(new_mem.id, new_mem.first_name), user.id)
 
             # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
@@ -289,6 +298,7 @@ def new_member(update: Update, context: CallbackContext):
                 t = threading.Thread(target=aggr_mute_check, args=(
                     context.bot, chat, mute_message.message_id, new_mem.id,))
                 t.start()
+        return log
 
 def aggr_mute_check(bot: Bot, chat: Chat, message_id, user_id):
     time.sleep(60)
