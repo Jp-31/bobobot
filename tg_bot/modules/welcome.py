@@ -170,7 +170,10 @@ def new_member(update: Update, context: CallbackContext):
             first_name = new_mem.first_name or "PersonWithNoName"
             
             log += "\n<b>• User:</b> {}" \
-                   "\n<b>• ID:</b> <code>{}</code>".format(mention_html(new_mem.id, new_mem.first_name), user.id)
+                   "\n<b>• ID:</b> <code>{}</code>".format(mention_html(new_mem.id, new_mem.first_name), new_mem.id)
+            
+            if user.id != new_mem.id:
+                log += "\n<b>• Added by:</b> {}".format(mention_html(user.id, user.first_name))
 
             # Give the owner a special welcome
             if new_mem.id == OWNER_ID:
@@ -298,7 +301,10 @@ def new_member(update: Update, context: CallbackContext):
                 t = threading.Thread(target=aggr_mute_check, args=(
                     context.bot, chat, mute_message.message_id, new_mem.id,))
                 t.start()
-        return log
+
+            return log
+
+    return ""
 
 def aggr_mute_check(bot: Bot, chat: Chat, message_id, user_id):
     time.sleep(60)
