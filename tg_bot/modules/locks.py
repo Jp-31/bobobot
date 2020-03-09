@@ -1,4 +1,4 @@
-import html
+import html, time
 from typing import Optional, List
 
 import telegram.ext as tg
@@ -33,6 +33,7 @@ UNLOCK_PERMISSIONS = ChatPermissions(can_send_messages=True,
                                      can_send_polls=True)
 
 LOCK_TYPES = {'sticker': Filters.sticker,
+              'animatedsticker': CustomFilters.animated_sticker,
               'audio': Filters.audio,
               'poll': Filters.poll,
               'voice': Filters.voice,
@@ -311,6 +312,9 @@ def del_lockables(update: Update, context: CallbackContext):
                        return
                 try:
                     message.delete()
+                    lock_message = context.bot.send_message(chat.id, "Message deleted because it contained a locked item: {}.".format(lockable))
+                    time.sleep(2)
+                    lock_message.delete()
                 except BadRequest as excp:
                     if excp.message == "Message to delete not found":
                         pass
@@ -345,6 +349,7 @@ def build_lock_message(chat_id):
         res = "These are the locks in this chat:"
         if locks:
             res += "\n - sticker = `{}`" \
+                   "\n - animatedsticker = `{}`" \
                    "\n - audio = `{}`" \
                    "\n - poll = `{}`" \
                    "\n - voice = `{}`" \
@@ -363,6 +368,7 @@ def build_lock_message(chat_id):
                    "\n - game = `{}`" \
                    "\n - location = `{}`" \
                    "\n - rtl = `{}` ".format(locks.sticker, 
+                                             locks.animatedsticker,
                                              locks.audio, 
                                              locks.poll, 
                                              locks.voice, 

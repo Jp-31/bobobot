@@ -20,6 +20,7 @@ class Permissions(BASE):
     document = Column(Boolean, default=False)
     photo = Column(Boolean, default=False)
     sticker = Column(Boolean, default=False)
+    animatedsticker = Column(Boolean, default=False)
     gif = Column(Boolean, default=False)
     apk = Column(Boolean, default=False)
     url = Column(Boolean, default=False)
@@ -42,6 +43,7 @@ class Permissions(BASE):
         self.document = False
         self.photo = False
         self.sticker = False
+        self.animatedsticker = False
         self.gif = False
         self.apk = False
         self.url = False
@@ -132,6 +134,8 @@ def update_lock(chat_id, lock_type, locked):
             curr_perm.photo = locked
         elif lock_type == "sticker":
             curr_perm.sticker = locked
+        elif lock_type == "animatedsticker":
+            curr_perm.animatedsticker = locked
         elif lock_type == "gif":
             curr_perm.gif = locked
         elif lock_type == "apk":
@@ -187,6 +191,8 @@ def is_locked(chat_id, lock_type):
 
     elif lock_type == "sticker":
         return curr_perm.sticker
+    elif lock_type == "animatedsticker":
+        return curr_perm.animatedsticker
     elif lock_type == "photo":
         return curr_perm.photo
     elif lock_type == "audio":
