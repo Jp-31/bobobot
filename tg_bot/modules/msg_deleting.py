@@ -26,7 +26,7 @@ def purge(update: Update, context: CallbackContext) -> str:
             message_id = msg.reply_to_message.message_id
             delete_to = msg.message_id - 1
             if args and len(args) > 1 and args[1].isdigit():
-                new_del = message_id + int(args[1])
+                new_del = message_id + (int(args[1]) -1)
                 # No point deleting messages which haven't been written yet.
                 if new_del < delete_to:
                     delete_to = new_del
@@ -52,8 +52,8 @@ def purge(update: Update, context: CallbackContext) -> str:
                 elif err.message != "Message to delete not found":
                     LOGGER.exception("Error while purging chat messages.")
 
-            purge_msg = context.bot.send_message(chat.id, "Purge complete. "
-                                                  "\nThis message will be self-destructed in 3 seconds.")
+            purge_msg = context.bot.send_message(chat.id, "Purged {} messages. "
+                                                  "\nThis message will be self-destructed in 3 seconds.".format(str((delete_to - message_id) + 1)))
             time.sleep(3)
             purge_msg.delete()
             return "<b>{}:</b>" \
@@ -61,7 +61,7 @@ def purge(update: Update, context: CallbackContext) -> str:
                    "\n<b>• Admin:</b> {}" \
                    "\nPurged <code>{}</code> messages.".format(html.escape(chat.title),
                                                                mention_html(user.id, user.first_name),
-                                                               delete_to - message_id)
+                                                               (delete_to - message_id) + 1)
 
     else:
         msg.reply_text("Reply to a message to select where to start purging from.")
