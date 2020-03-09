@@ -44,3 +44,10 @@ class CustomFilters(object):
             return bool(message.text or message.sticker or message.photo or message.document or message.video)
 
     has_text = _HasText()
+
+    class _AnimatedSticker(BaseFilter):
+        def filter(self, message: Message):
+            if message.sticker:
+                return bool(message.sticker.is_animated)
+
+    animated_sticker = _AnimatedSticker()
