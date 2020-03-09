@@ -108,7 +108,10 @@ def get_welcome_type(msg: Message):
             text, buttons = button_markdown_parser(
                 args[1], entities=msg.parse_entities(), offset=offset)
         else:
-            text = msg.reply_to_message.caption
+            args = msg.reply_to_message.caption.split(None, 0)
+            offset = len(args[1]) - len(msg.text)
+            text, buttons = button_markdown_parser(
+                args[1], entities=msg.parse_entities(), offset=offset)
         data_type = Types.DOCUMENT
 
     elif msg.reply_to_message and msg.reply_to_message.photo:
@@ -119,7 +122,10 @@ def get_welcome_type(msg: Message):
             text, buttons = button_markdown_parser(
                 args[1], entities=msg.parse_entities(), offset=offset)
         else:
-            text = msg.reply_to_message.caption
+            args = msg.reply_to_message.caption.split(None, 0)
+            offset = len(args[1]) - len(msg.text)
+            text, buttons = button_markdown_parser(
+                args[1], entities=msg.parse_entities(), offset=offset)
         data_type = Types.PHOTO
 
     elif msg.reply_to_message and msg.reply_to_message.audio:
@@ -140,7 +146,10 @@ def get_welcome_type(msg: Message):
             text, buttons = button_markdown_parser(
                 args[1], entities=msg.parse_entities(), offset=offset)
         else:
-            text = msg.reply_to_message.caption
+            args = msg.reply_to_message.caption.split(None, 0)
+            offset = len(args[1]) - len(msg.text)
+            text, buttons = button_markdown_parser(
+                args[1], entities=msg.parse_entities(), offset=offset)
         data_type = Types.VIDEO
 
     return text, data_type, content, buttons
