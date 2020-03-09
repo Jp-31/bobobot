@@ -133,11 +133,15 @@ def filters(update: Update, context: CallbackContext):
           "\n<b>• Action:</b> added" \
           "\n<b>• Admin:</b> {}" \
           "\n<b>• Trigger:</b> {}".format(html.escape(chat.title), mention_html(user.id, user.first_name), keyword)
-                         
+
     update.effective_message.reply_text("Filter has been saved for '`{}`'.".format(keyword), parse_mode=ParseMode.MARKDOWN)
-    return log
+
+    send_filter_log(update, context, log)
     raise DispatcherHandlerStop
 
+@loggable
+def send_filter_log(update, context, log):
+    return log
 
 # NOT ASYNC BECAUSE DISPATCHER HANDLER RAISED
 @user_admin
