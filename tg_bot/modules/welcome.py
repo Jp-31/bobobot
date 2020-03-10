@@ -155,9 +155,8 @@ def new_member(update: Update, context: CallbackContext):
     
     gban_checks = get_gbanned_user(user_id)
     
-    log = "<b>{}:</b>" \
-          "\n#WELCOME" \
-          "\n<b>A new user has joined:</b>".format(escape(chat.title))
+    join_log = sql.get_join_event_pref(chat.id)
+    join_members = msg.new_chat_members
 
     if should_welc:
         sent = None
@@ -168,14 +167,17 @@ def new_member(update: Update, context: CallbackContext):
 
             # edge case of empty name - occurs for some bugs.
             first_name = new_mem.first_name or "PersonWithNoName"
-            
-            log += "\n<b>• User:</b> {}" \
-                   "\n<b>• ID:</b> <code>{}</code>".format(mention_html(new_mem.id, new_mem.first_name), new_mem.id)
-            
-            if user.id != new_mem.id:
-                log += "\n<b>• Added by:</b> {}".format(mention_html(user.id, user.first_name))
-
             # Give the owner a special welcome
+            log = ""
+            if join_log == True:
+                log += "<b>{}:</b>" \
+                       "\n#WELCOME" \
+                       "\n<b>A new user has joined:</b>" \
+                       "\n<b>• User:</b> {}" \
+                       "\n<b>• ID:</b> <code>{}</code>".format(escape(chat.title), mention_html(mem.id, mem.first_name), mem.id)
+                if user.id != mem.id:
+                    log += "\n<b>• Added by:</b> {}".format(mention_html(user.id, user.first_name))
+
             if new_mem.id == OWNER_ID:
                 update.effective_message.reply_text("Master is in the houseeee, let's get this party started!")
                 continue
@@ -702,6 +704,46 @@ def del_joined(update: Update, context: CallbackContext) -> str:
         update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
         return ""
 
+@run_async
+@user_admin
+@loggable
+def join_event_log(update: Update, context: CallbackContext) -> str:
+    chat = update.effective_chat  # type: Optional[Chat]
+    user = update.effective_user  # type: Optional[User]
+    args = update.effective_message.text.split(" ")
+    args_option = ""
+    
+    if len(args) > 1:
+        args_option = args[1].lower()
+
+    if  len(args) == 1:
+        del_pref = sql.get_join_event_pref(chat.id)
+        if del_pref:
+            update.effective_message.reply_text("I'm currently sending join events logs.")
+        else:
+            update.effective_message.reply_text("I'm currently not sending any join event logs!")
+        return ""
+
+    if args_option != "" and args_option in ("on", "yes"):
+        sql.set_join_event(str(chat.id), True)
+        update.effective_message.reply_text("I'll send any new join user event to log channel.")
+        return "<b>{}:</b>" \
+               "\n#WELCOME" \
+               "\n<b>• Admin:</b> {}" \
+               "\nHas toggled joined events to <code>ON</code>.".format(escape(chat.title),
+                                                                         mention_html(user.id, user.first_name))
+    elif args_option != "" and args_option in ("off", "no"):
+        sql.set_join_event(str(chat.id), False)
+        update.effective_message.reply_text("I won't be sending any logs of new joined users to the log channel.")
+        return "<b>{}:</b>" \
+               "\n#WELCOME" \
+               "\n<b>• Admin:</b> {}" \
+               "\nHas toggled joined events to <code>OFF</code>.".format(escape(chat.title),
+                                                                          mention_html(user.id, user.first_name))
+    else:
+        # idek what you're writing, say yes or no
+        update.effective_message.reply_text("I understand 'on/yes' or 'off/no' only!")
+        return ""
 
 @run_async
 def delete_join(update: Update, context: CallbackContext):
@@ -749,7 +791,6 @@ def user_button(update: Update, context: CallbackContext):
             query.answer(text="You're not allowed to do this!")
     else:
         query.answer(text="You're not allowed to do this!")
-    
 WELC_HELP_TXT = "Your group's welcome/goodbye messages can be personalised in multiple ways. If you want the messages" \
                 " to be individually generated, like the default welcome message is, you can use *these* variables:\n" \
                 " - `{{first}}`: this represents the user's *first* name\n" \
@@ -826,6 +867,7 @@ __help__ = """
  - /resetgoodbye: reset to the default goodbye message.
  - /cleanwelcome <on/off>: On new member, try to delete the previous welcome message to avoid spamming the chat.
  - /cleanservice <on/off>: when someone joins, try to delete the *user* joined the group message.
+ - /joinlog <on/off>: when someone joins, send log to channel of join event.
  - /welcomemute <off/soft/strong/aggressive>: all users that join, get muted; a button gets added to the welcome message for them to unmute themselves. \
 This proves they aren't a bot! 
 
@@ -865,7 +907,8 @@ RESET_WELCOME = CustomCommandHandler(CMD_PREFIX, "resetwelcome", reset_welcome, 
 RESET_GOODBYE = CustomCommandHandler(CMD_PREFIX, "resetgoodbye", reset_goodbye, filters=Filters.group)
 CLEAN_WELCOME = CustomCommandHandler(CMD_PREFIX, "cleanwelcome", clean_welcome, filters=Filters.group)
 WELCOMEMUTE_HANDLER = CustomCommandHandler(CMD_PREFIX, "welcomemute", welcomemute, filters=Filters.group)
-DEL_JOINED = CustomCommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
+DEL_JOINED_HANDLER = CustomCommandHandler(CMD_PREFIX, ["rmjoin", "cleanservice"], del_joined, filters=Filters.group)
+JOIN_EVENT_HANDLER = CustomCommandHandler(CMD_PREFIX, "joinlog", join_event_log, filters=Filters.group)
 WELCOME_HELP = CustomCommandHandler(CMD_PREFIX, "welcomehelp", welcome_help)
 BUTTON_VERIFY_HANDLER = CallbackQueryHandler(user_button, pattern=r"user_join_")
 
@@ -880,5 +923,6 @@ dispatcher.add_handler(RESET_GOODBYE)
 dispatcher.add_handler(CLEAN_WELCOME)
 dispatcher.add_handler(WELCOMEMUTE_HANDLER)
 dispatcher.add_handler(BUTTON_VERIFY_HANDLER)
-dispatcher.add_handler(DEL_JOINED)
+dispatcher.add_handler(DEL_JOINED_HANDLER)
+dispatcher.add_handler(JOIN_EVENT_HANDLER)
 dispatcher.add_handler(WELCOME_HELP)

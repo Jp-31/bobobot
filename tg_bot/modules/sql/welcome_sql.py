@@ -24,6 +24,7 @@ class Welcome(BASE):
 
     clean_welcome = Column(BigInteger)
     del_joined = Column(BigInteger)
+    join_event = Column(Boolean, default=False)
     rtl_del = Column(BigInteger)
 
     def __init__(self, chat_id, should_welcome=True, should_goodbye=True):
@@ -202,6 +203,17 @@ def set_del_joined(chat_id, del_joined):
         SESSION.add(curr)
         SESSION.commit()
 
+def set_join_event(chat_id, join_event):
+    with INSERTION_LOCK:
+        curr = SESSION.query(Welcome).get(str(chat_id))
+        if not curr:
+            curr = Welcome(str(chat_id))
+
+        curr.join_event = int(join_event)
+
+        SESSION.add(curr)
+        SESSION.commit()
+
 def set_rtl_del(chat_id, rtl_del):
     with INSERTION_LOCK:
         curr = SESSION.query(Welcome).get(str(chat_id))
@@ -220,6 +232,15 @@ def get_del_pref(chat_id):
 
     if welc:
         return welc.del_joined
+
+    return False
+
+def get_join_event_pref(chat_id):
+    welc = SESSION.query(Welcome).get(str(chat_id))
+    SESSION.close()
+
+    if welc:
+        return welc.join_event
 
     return False
 
