@@ -211,7 +211,7 @@ def new_member(update: Update, context: CallbackContext):
                         keyboard = InlineKeyboardMarkup(keyb)
 
                         sent = send(update, context, cust_welcome, keyboard,
-                                    sql.DEFAULT_WELCOME.format(first=first_name), res, type)
+                                    sql.DEFAULT_WELCOME.format(first=first_name, chatname=chat_name), res, type)
 
                         if sent:
                             sql.set_clean_welcome(chat.id, sent.message_id)
@@ -226,7 +226,7 @@ def new_member(update: Update, context: CallbackContext):
                         keyboard = InlineKeyboardMarkup(keyb)
 
                         sent = send(update, context, cust_welcome, keyboard,
-                                    sql.DEFAULT_WELCOME.format(first=first_name), res, type)
+                                    sql.DEFAULT_WELCOME.format(first=first_name, chatname=chat_name), res, type)
 
                         if sent:
                             sql.set_clean_welcome(chat.id, sent.message_id)
@@ -242,7 +242,7 @@ def new_member(update: Update, context: CallbackContext):
                         keyboard = InlineKeyboardMarkup(keyb)
 
                         sent = send(update, context, cust_welcome, keyboard,
-                                    sql.DEFAULT_WELCOME.format(first=first_name), res, type)
+                                    sql.DEFAULT_WELCOME.format(first=first_name, chatname=chat_name), res, type)
 
                         if sent:
                             sql.set_clean_welcome(chat.id, sent.message_id)
@@ -253,17 +253,17 @@ def new_member(update: Update, context: CallbackContext):
                 # else, move on
                 if media == False:
                     if cust_welcome:
-                        res = format_welcome_message(cust_welcome, first_name, chat, new_mem)
+                        res = format_welcome_message(cust_welcome, first_name, chat_name, chat, new_mem)
                         buttons = sql.get_welc_buttons(chat.id)
                         keyb = build_keyboard(buttons)
                     else:
-                        res = sql.DEFAULT_WELCOME.format(first=first_name)
+                        res = sql.DEFAULT_WELCOME.format(first=first_name, chatname=chat_name)
                         keyb = []
 
                     keyboard = InlineKeyboardMarkup(keyb)
 
                     sent = send(update, context, res, keyboard,
-                                sql.DEFAULT_WELCOME.format(first=first_name))  # type: Optional[Message]
+                                sql.DEFAULT_WELCOME.format(first=first_name, chatname=chat_name))  # type: Optional[Message]
                 #User exception from mutes:
                 if is_user_ban_protected(chat, new_mem.id, chat.get_member(new_mem.id)) or human_checks or gban_checks:
                     no_mute = True
