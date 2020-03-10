@@ -253,7 +253,7 @@ def new_member(update: Update, context: CallbackContext):
                 # else, move on
                 if media == False:
                     if cust_welcome:
-                        res = format_welcome_message(cust_welcome, first_name, chat_name, chat, new_mem)
+                        res = format_welcome_message(cust_welcome, first_name, chat, new_mem)
                         buttons = sql.get_welc_buttons(chat.id)
                         keyb = build_keyboard(buttons)
                     else:
