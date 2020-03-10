@@ -209,12 +209,17 @@ SLAP_TEMPLATES = (
     "{user1} slams the metal door at {user2}.",
     "{user1} thundersmacks {user2} with lightning bolt.",
     "{user1} gave a friendly push to help {user2} learn to swim in a wild ocean.",
+    "{user1} {throws} {user2} into the ocean.",
+    "{user1} {throws} {user2} into ice filled water.",
+    "{user1} yeeted {user2}'s existence.",
     "{user1} {throws} {user2} into shark infested water.",
 )
 
 PUNCH_TEMPLATES = (
     "{user1} {punches} {user2} with a {item}.",
     "{user1} {punches} {user2} in the face with a {item}.",
+    "{user1} punched {user2} into lava.",
+    "{user1} {punches} {user2} repeatedly in the face.",
     "{user1} {punches} {user2} around a bit with a {item}.",
     "{user1} {punches} {user2} on their face. 👊",
 )
@@ -227,17 +232,15 @@ HUG_TEMPLATES = (
 )
 
 KISS_TEMPLATES = (
-    "{user1} pulls {user2} {kiss} deeply.",
     "{user1} {kiss} {user2} warmly.",
-    "{user1} {kiss} {user2} and chokes",
     "{user1} {kiss} {user2}.",
-    "{user1} rough {kiss} into {user2}'s lips.",
-    "{user1} throws {user2} and brings {user2}'s lips.",
-    "With {user1} dying breath, {user2} rushes over to give {user2} a last kiss",
-    "{user1} whispers love to {user2} and {kiss} her warmly",
-    "{user1} rushes over to {user2} and brings {user2} into a warm love hug",
-    "{user1} {kiss} {user2} into a deep sleep",
-    "{user1} {kiss} {user2} like a gay",
+    "{user1} kissed {user2} gently.",
+    "{user1} kissed {user2}.",
+    "With {user1} dying breath, {user2} rushes over to give {user2} a last kiss.",
+    "{user1} whispers love to {user2} and {kiss} her warmly.",
+    "{user1} rushes over to {user2} and brings {user2} into a warm love hug.",
+    "{user1} {kiss} {user2} into a deep sleep.",
+    "{user1} {kiss} {user2} using {item}.",
 )
 
 ITEMS = (
@@ -335,8 +338,8 @@ HUG = (
 KISS = (
     "french kiss",
     "kiss",
-    "tongue kiss",
     "kissed",
+    "tongue kiss",
     "tongue kissed",
     "bitten lips",
 )
@@ -534,8 +537,9 @@ def kiss(update: Update, context: CallbackContext):
 
     temp = random.choice(KISS_TEMPLATES)
     kiss = random.choice(KISS)
+    item = random.choice(ITEMS)
 
-    repl = temp.format(user1=user1, user2=user2, kiss=kiss)
+    repl = temp.format(user1=user1, user2=user2, item=item, kiss=kiss)
 
     reply_text(repl, parse_mode=ParseMode.MARKDOWN)
  
