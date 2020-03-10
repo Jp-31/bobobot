@@ -519,7 +519,7 @@ def set_welcome(update: Update, context: CallbackContext) -> str:
 def reset_welcome(update: Update, context: CallbackContext) -> str:
     chat = update.effective_chat  # type: Optional[Chat]
     user = update.effective_user  # type: Optional[User]
-    sql.set_custom_welcome(chat.id, sql.DEFAULT_WELCOME, sql.Types.TEXT)
+    sql.set_custom_welcome(chat.id, None, sql.DEFAULT_WELCOME, sql.Types.TEXT)
     update.effective_message.reply_text("Successfully reset welcome message to default!")
     return "<b>{}:</b>" \
            "\n#RESET_WELCOME" \
