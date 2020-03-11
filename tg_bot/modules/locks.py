@@ -347,53 +347,60 @@ def build_lock_message(chat_id):
         res = "There are no current locks in this chat."
     else:
         res = "These are the locks in this chat:"
-        if locks:
-            res += "\n - sticker = `{}`" \
-                   "\n - animatedsticker = `{}`" \
-                   "\n - audio = `{}`" \
-                   "\n - poll = `{}`" \
-                   "\n - voice = `{}`" \
-                   "\n - document = `{}`" \
-                   "\n - video = `{}`" \
-                   "\n - videonote = `{}`" \
-                   "\n - contact = `{}`" \
-                   "\n - command = `{}`" \
-                   "\n - photo = `{}`" \
-                   "\n - gif = `{}`" \
-                   "\n - apk = `{}`" \
-                   "\n - url = `{}`" \
-                   "\n - email = `{}`" \
-                   "\n - bots = `{}`" \
-                   "\n - forward = `{}`" \
-                   "\n - game = `{}`" \
-                   "\n - location = `{}`" \
-                   "\n - rtl = `{}` ".format(locks.sticker, 
-                                             locks.animatedsticker,
-                                             locks.audio, 
-                                             locks.poll, 
-                                             locks.voice, 
-                                             locks.document,
-                                             locks.video, 
-                                             locks.videonote, 
-                                             locks.contact, 
-                                             locks.command, 
-                                             locks.photo, 
-                                             locks.gif, 
-                                             locks.apk, 
-                                             locks.url, 
-                                             locks.email,
-                                             locks.bots, 
-                                             locks.forward, 
-                                             locks.game,
-                                             locks.location, 
-                                             locks.rtl)
         if restr:
-            res += "\n - messages = `{}`" \
+            res += "\n - all = `{}`" \
+                   "\n - messages = `{}`" \
                    "\n - media = `{}`" \
                    "\n - other = `{}`" \
-                   "\n - previews = `{}`" \
-                   "\n - all = `{}`".format(restr.messages, restr.media, restr.other, restr.preview,
-                                            all([restr.messages, restr.media, restr.other, restr.preview]))
+                   "\n - previews = `{}`".format(all([restr.messages, 
+                                            restr.media,
+                                            restr.other,
+                                            restr.preview]),
+                                            restr.messages,
+                                            restr.media, 
+                                            restr.other, 
+                                            restr.preview)
+
+        if locks:
+            res += "\n - audio = `{}`" \
+                   "\n - apk = `{}`" \
+                   "\n - animatedsticker = `{}`" \
+                   "\n - bots = `{}`" \
+                   "\n - command = `{}`" \
+                   "\n - contact = `{}`" \
+                   "\n - document = `{}`" \
+                   "\n - email = `{}`" \
+                   "\n - forward = `{}`" \
+                   "\n - game = `{}`" \
+                   "\n - gif = `{}`" \
+                   "\n - location = `{}`" \
+                   "\n - poll = `{}`" \
+                   "\n - photo = `{}`" \
+                   "\n - rtl = `{}` " \
+                   "\n - sticker = `{}`" \
+                   "\n - url = `{}`" \
+                   "\n - voice = `{}`" \
+                   "\n - video = `{}`" \
+                   "\n - videonote = `{}`".format(locks.audio,
+                                             locks.apk, 
+                                             locks.animatedsticker,
+                                             locks.bots, 
+                                             locks.command, 
+                                             locks.contact, 
+                                             locks.document,
+                                             locks.email,
+                                             locks.forward, 
+                                             locks.game,
+                                             locks.gif, 
+                                             locks.location, 
+                                             locks.poll, 
+                                             locks.photo, 
+                                             locks.rtl,
+                                             locks.sticker, 
+                                             locks.url, 
+                                             locks.voice, 
+                                             locks.video, 
+                                             locks.videonote)
     return res
 
 
