@@ -11,7 +11,7 @@ class UserInfo(BASE):
     info = Column(UnicodeText)
     nick_n = Column(UnicodeText)
 
-    def __init__(self, user_id, info, nick_n=""):
+    def __init__(self, user_id, info, nick_n):
         self.user_id = user_id
         self.info = info
         self.nick_n = nick_n
@@ -48,12 +48,12 @@ def get_user_nick(user_id):
 
 def set_user_nick(user_id, nick_n):
     with INSERTION_LOCK:
-        userinfo = SESSION.query(UserInfo).get(user_id)
-        if userinfo:
-            userinfo.nick_n = nick_n
+        usernick = SESSION.query(UserInfo).get(user_id)
+        if usernick:
+            usernick.nick_n = nick_n
         else:
-            userinfo = UserInfo(user_id, nick_n)
-        SESSION.add(userinfo)
+            usernick = UserInfo(user_id, nick_n)
+        SESSION.add(usernick)
         SESSION.commit()
 
 def get_user_me_info(user_id):

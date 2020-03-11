@@ -209,12 +209,17 @@ SLAP_TEMPLATES = (
     "{user1} slams the metal door at {user2}.",
     "{user1} thundersmacks {user2} with lightning bolt.",
     "{user1} gave a friendly push to help {user2} learn to swim in a wild ocean.",
+    "{user1} {throws} {user2} into the ocean.",
+    "{user1} {throws} {user2} into ice filled water.",
+    "{user1} yeeted {user2}'s existence.",
     "{user1} {throws} {user2} into shark infested water.",
 )
 
 PUNCH_TEMPLATES = (
     "{user1} {punches} {user2} with a {item}.",
     "{user1} {punches} {user2} in the face with a {item}.",
+    "{user1} punched {user2} into lava.",
+    "{user1} {punches} {user2} repeatedly in the face.",
     "{user1} {punches} {user2} around a bit with a {item}.",
     "{user1} {punches} {user2} on their face. 👊",
 )
@@ -226,6 +231,17 @@ HUG_TEMPLATES = (
     "{user1} {hug} {user2} with kindness.",
 )
 
+KISS_TEMPLATES = (
+    "{user1} {kiss} {user2} warmly.",
+    "{user1} {kiss} {user2}.",
+    "{user1} kissed {user2} gently.",
+    "{user1} kissed {user2}.",
+    "With {user1} dying breath, {user2} rushes over to give {user2} a last kiss.",
+    "{user1} whispers love to {user2} and {kiss} her warmly.",
+    "{user1} rushes over to {user2} and brings {user2} into a warm love hug.",
+    "{user1} {kiss} {user2} into a deep sleep.",
+    "{user1} {kiss} {user2} using {item}.",
+)
 
 ITEMS = (
     "cast iron skillet",
@@ -317,6 +333,15 @@ HUG = (
     "hugged",
     "kissed",
     "pinches",
+)
+
+KISS = (
+    "french kiss",
+    "kiss",
+    "kissed",
+    "tongue kiss",
+    "tongue kissed",
+    "bitten lips",
 )
 
 GREETING = (
@@ -477,6 +502,44 @@ def hug(update: Update, context: CallbackContext):
     hug = random.choice(HUG)
 
     repl = temp.format(user1=user1, user2=user2, hug=hug)
+
+    reply_text(repl, parse_mode=ParseMode.MARKDOWN)
+
+@run_async
+@can_message
+def kiss(update: Update, context: CallbackContext):
+    msg = update.effective_message  # type: Optional[Message]
+    args = msg.text.split(" ")
+
+    # reply to correct message
+    reply_text = msg.reply_to_message.reply_text if msg.reply_to_message else msg.reply_text
+
+    # get user who sent message
+    if msg.from_user.username:
+        curr_user = "@" + escape_markdown(msg.from_user.username)
+    else:
+        curr_user = "[{}](tg://user?id={})".format(msg.from_user.first_name, msg.from_user.id)
+
+    user_id = extract_user(update.effective_message, args)
+    if user_id:
+        kissed_user = context.bot.get_chat(user_id)
+        user1 = curr_user
+        if kissed_user.username:
+            user2 = "@" + escape_markdown(kissed_user.username)
+        else:
+            user2 = "[{}](tg://user?id={})".format(kissed_user.first_name,
+                                                   kissed_user.id)
+
+    # if no target found, bot targets the sender
+    else:
+        user1 = "Awwh! [{}](tg://user?id={})".format(context.bot.first_name, context.bot.id)
+        user2 = curr_user
+
+    temp = random.choice(KISS_TEMPLATES)
+    kiss = random.choice(KISS)
+    item = random.choice(ITEMS)
+
+    repl = temp.format(user1=user1, user2=user2, item=item, kiss=kiss)
 
     reply_text(repl, parse_mode=ParseMode.MARKDOWN)
  
@@ -896,6 +959,7 @@ An "odds and ends" module for small, simple commands which don't really fit anyw
  - /s: saves the message you reply to your chat with the bot.
  - /slap: slap a user, or get slapped if not a reply.
  - /hug: hug a user, or get hugged if not a reply.
+ - /kiss: kiss a user, or get kissed if not a reply.
  - /punch: punch a user, or get punched if not a reply.
  - /info: get information about a user.
  - Hi {}: responds to user (to disable greet `/disable botgreet`; to enable greet `/enable botgreet`)
@@ -917,6 +981,7 @@ SLAP_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "slap", slap)
 PUNCH_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "punch", punch)
 TRANSLATOR_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"tl", translator)
 HUG_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "hug", hug)
+KISS_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "kiss", kiss)
 INFO_HANDLER = DisableAbleCommandHandler(CMD_PREFIX,"info", info)
 PING_HANDLER = DisableAbleCommandHandler(CMD_PREFIX, "ping", ping)
 GREETINGS_REGEX_HANDLER = DisableAbleRegexHandler("(?i)hi {}".format(dispatcher.bot.first_name),
@@ -941,6 +1006,7 @@ dispatcher.add_handler(RNUM_HANDLER)
 dispatcher.add_handler(SLAP_HANDLER)
 dispatcher.add_handler(PUNCH_HANDLER)
 dispatcher.add_handler(HUG_HANDLER)
+dispatcher.add_handler(KISS_HANDLER)
 dispatcher.add_handler(TRANSLATOR_HANDLER)
 dispatcher.add_handler(INFO_HANDLER)
 dispatcher.add_handler(ECHO_HANDLER)
