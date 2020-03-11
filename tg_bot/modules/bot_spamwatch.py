@@ -1,20 +1,138 @@
 import spamwatch
 import html
 
+from io import BytesIO
 from telegram import Message, Update, Bot, User, Chat, ParseMode, InlineKeyboardMarkup
 from telegram.error import BadRequest, TelegramError
 from telegram.ext import run_async, CommandHandler, MessageHandler, Filters, CallbackContext
 
-from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER, CMD_PREFIX
+from tg_bot import dispatcher, SPAMWATCH_TOKEN, LOGGER, CMD_PREFIX, SUDO_USERS, SUPPORT_USERS, GBAN_LOG
 import tg_bot.modules.sql.global_bans_sql as sql
 from tg_bot.modules.helper_funcs.handlers import CustomCommandHandler
 from telegram.utils.helpers import mention_html
 from tg_bot.modules.helper_funcs.chat_status import bot_admin, user_admin, is_user_ban_protected, can_restrict, \
     is_user_admin, is_user_in_chat, is_bot_admin
-from tg_bot.modules.helper_funcs.extraction import extract_user
+from tg_bot.modules.helper_funcs.extraction import extract_user, extract_user_and_text
+from tg_bot.modules.helper_funcs.filters import CustomFilters
 
 client = spamwatch.Client(SPAMWATCH_TOKEN) # initialize spamwatch client with the token from the config file
 SPAM_ENFORCE_GROUP = 7
+
+@run_async
+def unspamban(update: Update, context: CallbackContext):
+    message = update.effective_message  # type: Optional[Message]
+    user = update.effective_user  # type: Optional[User]
+    args = message.text.split(" ")
+    user_id = extract_user(message, args)
+
+    if not user_id:
+        message.reply_text("You don't seem to be referring to a user.")
+        return
+
+    try:
+        user_chat = context.bot.get_chat(user_id)
+    except BadRequest as excp:
+        message.reply_text(excp.message)
+        return
+
+    if user_chat.type != 'private':
+        message.reply_text("That's not a user!")
+        return
+
+    starting = "Whitelisting {} from SpamWatch ban...".format(mention_html(user_chat.id, 
+                                                              user_chat.first_name or "Deleted Account"))
+    message.reply_text(starting, parse_mode=ParseMode.HTML)
+    
+    super_user = update.effective_user  # type: Optional[User]
+    spam_log = "<b>SpamWatch</b>" \
+                "\n#WHITELIST" \
+                "\n<b>Status:</b> <code>WHITELISTED</code>" \
+                "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
+    
+    if user_chat.last_name:
+        spam_log += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
+    
+    if user_chat.username:
+        spam_log += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
+    
+    if  user_chat:
+        spam_log += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
+    
+    if super_user.id in SUDO_USERS:
+        spam_log += "\n<b>Sudo:</b> {}".format(mention_html(super_user.id, super_user.first_name))
+    
+    if super_user.id in SUPPORT_USERS:
+        spam_log += "\n<b>Support:</b> {}".format(mention_html(super_user.id, super_user.first_name))
+    
+    context.bot.send_message(chat_id=GBAN_LOG, text=spam_log, parse_mode=ParseMode.HTML)
+    sql.spam_whitelist(user_id, user_chat.username or user_chat.first_name)
+    
+    spamtxt = "User {} whitelisted in SpamWatch".format(mention_html(user_chat.id, user_chat.first_name or 
+                                                               "Deleted Account"))
+    
+    
+    context.bot.send_message(chat_id=GBAN_LOG, text=spamtxt, parse_mode=ParseMode.HTML)
+
+    message.reply_text("User {} whitelisted in SpamWatch!".format(mention_html(user_chat.id, user_chat.first_name 
+                                                            or "Deleted Account")), parse_mode=ParseMode.HTML)
+
+@run_async
+def spamban(update: Update, context: CallbackContext):
+    message = update.effective_message  # type: Optional[Message]
+    user = update.effective_user  # type: Optional[User]
+    args = message.text.split(" ")
+
+    user_id = extract_user(message, args)
+    if not user_id:
+        message.reply_text("You don't seem to be referring to a user.")
+        return
+
+    user_chat = context.bot.get_chat(user_id)
+    if user_chat.type != 'private':
+        message.reply_text("That's not a user!")
+        return
+
+    if not sql.spam_not_in_hoe(user_id):
+        msg = "User {} is not whitelisted from SpamWatch!".format(mention_html(user_chat.id, user_chat.first_name 
+                                                                         or "Deleted Account"))
+        
+        message.reply_text(msg, parse_mode=ParseMode.HTML)
+        return
+
+    super_user = update.effective_user  # type: Optional[User]
+
+    message.reply_text("Removing {} from SpamWatch whitelist.".format(user_chat.first_name or "Deleted Account"))
+
+    send_gban = "<b>Regression of SpamWatch</b>" \
+                "\n#UNWHITELIST" \
+                "\n<b>Status:</b> <code>Ceased</code>" \
+                "\n<b>Name:</b> {}".format(mention_html(user_chat.id, user_chat.first_name or "Deleted Account"))
+    
+    if user_chat.last_name:
+        send_gban += "\n<b>Surname:</b> {}".format(mention_html(user_chat.id, user_chat.last_name))
+    
+    if user_chat.username:
+        send_gban += "\n<b>Username:</b> @{}".format(html.escape(user_chat.username))
+    
+    if  user_chat:
+        send_gban += "\n<b>ID:</b> <code>{}</code>".format(user_chat.id)
+    
+    if super_user.id in SUDO_USERS:
+        send_gban += "\n<b>Sudo:</b> {}".format(mention_html(super_user.id, super_user.first_name))
+    
+    if super_user.id in SUPPORT_USERS:
+        send_gban += "\n<b>Support:</b> {}".format(mention_html(super_user.id, super_user.first_name))
+
+    context.bot.send_message(chat_id=GBAN_LOG, text=send_gban, parse_mode=ParseMode.HTML)
+    
+    sql.spam_unwhitelist(user_id)
+    blacklist_t = "User {} removed from SpamWatch whitelist.".format(mention_html(user_chat.id, user_chat.first_name or 
+                                                                                     "Deleted Account"))
+    
+    context.bot.send_message(chat_id=GBAN_LOG, text=blacklist_t, parse_mode=ParseMode.HTML)
+                                                                            
+    message.reply_text("User {} removed from SpamWatch whitelist.".format(mention_html(user_chat.id, user_chat.first_name 
+                                                               or "Deleted Account")), parse_mode=ParseMode.HTML)
 
 @run_async
 @bot_admin
@@ -45,6 +163,9 @@ def enforce_spamwatch_ban(update: Update, context: CallbackContext):
         new_members = update.effective_message.new_chat_members
         
         is_banned = client.get_ban(user.id)
+
+        if sql.spamwatch_whitelisted(user.id): # dont ban whitelisted users
+            return
 
         if user and not is_user_admin(chat, user.id):
             if is_banned:
@@ -139,6 +260,23 @@ def spam_ban_join(update: Update, context: CallbackContext, user_id, reason) -> 
     return ""
 
 @run_async
+def spamwatchlist(update: Update, context: CallbackContext):
+    spamwatch_whitelist = sql.get_spamwatch_list()
+
+    if not spamwatch_whitelist:
+        update.effective_message.reply_text("There aren't any whitelisted spam users!")
+        return
+
+    banfile = 'These guys are immunity to SpamWatch\n'
+    for user in spamwatch_whitelist:
+        banfile += "[x] {} - {}\n".format(user["name"], user["user_id"])
+
+    with BytesIO(str.encode(banfile)) as output:
+        output.name = "spamwatch.txt"
+        update.effective_message.reply_document(document=output, filename="spamwatch.txt",
+                                                caption="Here is the list of currently whitelisted users.")
+
+@run_async
 @user_admin
 def spamwatch_stat(update: Update, context: CallbackContext):
     chat = update.effective_chat
@@ -183,9 +321,18 @@ disengage from protecting the chatroom.
 """.format(dispatcher.bot.first_name, dispatcher.bot.first_name)
 
 __mod_name__ = "SpamWatch"
-    
+
+UNSPAMBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "unspamban", unspamban,
+                              filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
+SPAMBAN_HANDLER = CustomCommandHandler(CMD_PREFIX, "spamban", spamban,
+                              filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
 SPAM_ENFORCER = MessageHandler(Filters.all & Filters.group, enforce_spamwatch_ban)
 SPAM_STATUS = CustomCommandHandler(CMD_PREFIX, "spamwatch", spamwatch_stat, filters=Filters.group)
+SPAM_LIST = CustomCommandHandler(CMD_PREFIX, "spamlist", spamwatchlist,
+                           filters=CustomFilters.sudo_filter | CustomFilters.support_filter)
 
 dispatcher.add_handler(SPAM_ENFORCER, SPAM_ENFORCE_GROUP)
 dispatcher.add_handler(SPAM_STATUS)
+dispatcher.add_handler(UNSPAMBAN_HANDLER)
+dispatcher.add_handler(SPAMBAN_HANDLER)
+dispatcher.add_handler(SPAM_LIST)

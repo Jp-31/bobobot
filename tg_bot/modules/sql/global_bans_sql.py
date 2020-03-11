@@ -24,6 +24,21 @@ class GloballyBannedUsers(BASE):
                 "name": self.name,
                 "reason": self.reason}
 
+class SpamWatchUsers(BASE):
+    __tablename__ = "spamwatch"
+    user_id = Column(Integer, primary_key=True)
+    name = Column(UnicodeText, nullable=False)
+
+    def __init__(self, user_id, name):
+        self.user_id = user_id
+        self.name = name
+
+    def __repr__(self):
+        return "<SpamWatch User whitelisted {} ({})>".format(self.name, self.user_id)
+
+    def to_dict(self):
+        return {"user_id": self.user_id,
+                "name": self.name}
 
 class GbanSettings(BASE):
     __tablename__ = "gban_settings"
@@ -46,13 +61,16 @@ class GbanSettings(BASE):
 
 
 GloballyBannedUsers.__table__.create(checkfirst=True)
+SpamWatchUsers.__table__.create(checkfirst=True)
 GbanSettings.__table__.create(checkfirst=True)
 
 GBANNED_USERS_LOCK = threading.RLock()
+SPAMWATCH_WHITELIST = threading.RLock()
 GBAN_SETTING_LOCK = threading.RLock()
 GBANNED_LIST = set()
 GBANSTAT_LIST = set()
 GBANALERT_LIST = set()
+SPAMWATCH_USERS_LIST = set()
 SPAMWATCH_LIST = set()
 
 
@@ -202,6 +220,42 @@ def disable_spamw(chat_id):
         SESSION.commit()
         SPAMWATCH_LIST.add(str(chat_id))
 
+def spam_whitelist(user_id, name):
+    with SPAMWATCH_WHITELIST:
+        user = SESSION.query(SpamWatchUsers).get(user_id)
+        if not user:
+            user = SpamWatchUsers(user_id, name)
+        else:
+            user.name = name
+
+        SESSION.merge(user)
+        SESSION.commit()
+        __load_spamwatch_userid_list()
+
+def spam_unwhitelist(user_id):
+    with SPAMWATCH_WHITELIST:
+        user = SESSION.query(SpamWatchUsers).get(user_id)
+        if user:
+            SESSION.delete(user)
+
+        SESSION.commit()
+        __load_spamwatch_userid_list()
+
+def whitelist_users(user_id):
+    try:
+        return SESSION.query(SpamWatchUsers).get(user_id)
+    finally:
+        SESSION.close()
+
+def spamwatch_whitelisted(user_id):
+    return str(user_id) not in SPAMWATCH_USERS_LIST
+
+def get_spamwatch_list():
+    try:
+        return [x.to_dict() for x in SESSION.query(SpamWatchUsers).all()]
+    finally:
+        SESSION.close()
+
 def does_chat_gban(chat_id):
     return str(chat_id) not in GBANSTAT_LIST
 
@@ -219,6 +273,13 @@ def __load_gbanned_userid_list():
     global GBANNED_LIST
     try:
         GBANNED_LIST = {x.user_id for x in SESSION.query(GloballyBannedUsers).all()}
+    finally:
+        SESSION.close()
+
+def __load_spamwatch_userid_list():
+    global SPAMWATCH_USERS_LIST
+    try:
+        SPAMWATCH_USERS_LIST = {x.user_id for x in SESSION.query(SpamWatchUsers).all()}
     finally:
         SESSION.close()
 
@@ -258,6 +319,7 @@ def migrate_chat(old_chat_id, new_chat_id):
 
 # Create in memory userid to avoid disk access
 __load_gbanned_userid_list()
+__load_spamwatch_userid_list()
 __load_gban_stat_list()
 __load_gban_alert_list()
 __load_spamwatch_list()
