@@ -709,7 +709,18 @@ def msg_save(update: Update, context: CallbackContext):
     msg = update.effective_message  # type: Optional[Message]
     user = update.effective_user  # type: Optional[User]
     chat = update.effective_chat
-    success_pm = context.bot.forward_message(user.id, chat.id, msg.message_id)
+
+    try:
+        if msg.reply_to_message:
+            success_pm = context.bot.forward_message(
+                user.id, chat.id, msg.reply_to_message.message_id)
+        else:
+            success_pm = context.bot.forward_message(
+                user.id, chat.id, msg.message_id)
+    
+    except TelegramError as e:
+        pass
+
     saved = msg.reply_text("Successfully saved message!")
     msg.delete()
     try:
