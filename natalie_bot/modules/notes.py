@@ -139,7 +139,7 @@ def cmd_get(update: Update, context: CallbackContext):
     args = update.effective_message.text.split(" ")
     if len(args) >= 3 and args[2].lower() == "noformat":
         get(context.bot, update, args[1], show_none=True, no_format=True)
-    elif len(args) >= 1:
+    elif len(args) >= 2:
         get(context.bot, update, args[1], show_none=True)
     else:
         update.effective_message.reply_text("Get rekt")
