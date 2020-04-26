@@ -8,6 +8,12 @@ Alternatively, find us on telegram [CrEaTiiOn187](https://t.me/CrEaTiiOn_187) & 
 
 For support please use [NatalieSupport](https://t.me/NatalieSupport)!
 
+## Credits
+A huge thanks to [Paul](https://github.com/PaulSonOfLars) for creating [Marie](https://github.com/PaulSonOfLars/tgbot)!
+Without his work we wouldn't have started off and evolved to where we are now!
+
+We'd also like to thank everyone involved in helping Paul create Marie!
+
 ## Starting the bot.
 
 Once you've setup your database and your configuration (see below) is complete, simply run:
