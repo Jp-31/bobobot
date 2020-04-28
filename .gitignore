@@ -1,5 +1,7 @@
-tg_bot/config.py
+natalie_bot/config.py
 *.pyc
 .idea/
 .DS_Store
 *.orig
+.vscode/settings.json
+config*.py
